@@ -49,6 +49,7 @@ function evalSlots(slotContents: (string | null)[]): number | null {
   }
   if (!expr) return null
   if (/^[+*/]/.test(expr) || /[+\-*/]$/.test(expr)) return null
+  if (/\([+\-*/]/.test(expr) || /[+\-*/]\)/.test(expr)) return null
   try {
     const r = Function('"use strict";return(' + expr + ')')() as number
     return isFinite(r) ? Math.round(r * 1e9) / 1e9 : null
@@ -57,7 +58,10 @@ function evalSlots(slotContents: (string | null)[]): number | null {
   }
 }
 
-export function useNumeris(puzzle: Puzzle) {
+export function useNumeris(
+  puzzle: Puzzle,
+  { initialElapsed = 0, paused = false }: { initialElapsed?: number; paused?: boolean } = {}
+) {
   const tiles = useMemo<TileData[]>(
     () => puzzle.tiles.map((val, id) => ({ val, id })),
     [puzzle.tiles]
@@ -66,17 +70,17 @@ export function useNumeris(puzzle: Puzzle) {
   const [slotContents, setSlotContents] = useState<(string | null)[]>(
     () => Array(puzzle.slots).fill(null)
   )
-  const [elapsed, setElapsed] = useState(0)
+  const [elapsed, setElapsed] = useState(initialElapsed)
 
   const solved =
     slotContents.every(s => s !== null) &&
     evalSlots(slotContents) === puzzle.target
 
   useEffect(() => {
-    if (solved) return
+    if (solved || paused) return
     const id = setInterval(() => setElapsed(e => e + 1), 1000)
     return () => clearInterval(id)
-  }, [solved])
+  }, [solved, paused])
 
   const usedIndices = useMemo<Set<number>>(() => {
     const used: number[] = []
@@ -122,6 +126,10 @@ export function useNumeris(puzzle: Puzzle) {
     })
   }, [puzzle.slots, puzzle.target])
 
+  const resetBoard = useCallback((contents: (string | null)[]) => {
+    setSlotContents(contents)
+  }, [])
+
   const currentResult = evalSlots(slotContents)
   const allFilled = slotContents.every(s => s !== null)
 
@@ -138,5 +146,6 @@ export function useNumeris(puzzle: Puzzle) {
     swapSlots,
     returnSlot,
     clearBoard,
+    resetBoard,
   }
 }

@@ -10,15 +10,18 @@ const FALLBACK_PUZZLE: Puzzle = {
   slots: 7,
 }
 
-async function getTodaysPuzzle(): Promise<Puzzle> {
+async function getTodaysPuzzle(): Promise<{ puzzle: Puzzle; puzzleId: string | null }> {
   const today = new Date().toISOString().split('T')[0]
   const { data } = await supabase
     .from('daily_puzzles')
-    .select('puzzle_data')
+    .select('id, puzzle_data')
     .eq('game', 'numeris')
     .eq('puzzle_date', today)
     .single()
-  return (data?.puzzle_data as Puzzle) ?? FALLBACK_PUZZLE
+  return {
+    puzzle: (data?.puzzle_data as Puzzle) ?? FALLBACK_PUZZLE,
+    puzzleId: data?.id ?? null,
+  }
 }
 
 export const metadata: Metadata = {
@@ -26,7 +29,7 @@ export const metadata: Metadata = {
 }
 
 export default async function NumerisPage() {
-  const puzzle = await getTodaysPuzzle()
+  const { puzzle, puzzleId } = await getTodaysPuzzle()
   return (
     <>
       <nav className="px-5 pt-4">
@@ -37,7 +40,7 @@ export default async function NumerisPage() {
           ← Home
         </Link>
       </nav>
-      <NumerisClient puzzle={puzzle} />
+      <NumerisClient puzzle={puzzle} puzzleId={puzzleId} />
     </>
   )
 }

@@ -1,6 +1,8 @@
-'use client'
+"use client";
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/components/auth/AuthProvider";
 import {
   DndContext,
   DragOverlay,
@@ -12,19 +14,24 @@ import {
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
-} from '@dnd-kit/core'
-import { useNumeris, isSym, type TileData, type Puzzle } from './useNumeris'
-import Tile from './Tile'
-import styles from './numeris.module.css'
+} from "@dnd-kit/core";
+import { useNumeris, isSym, type TileData, type Puzzle } from "./useNumeris";
+import Tile from "./Tile";
+import styles from "./numeris.module.css";
 
 // ── Tray drop zone ────────────────────────────────────────────────────
 function TrayArea({ children }: { children: React.ReactNode }) {
-  const { setNodeRef, isOver } = useDroppable({ id: 'tray' })
+  const { setNodeRef, isOver } = useDroppable({ id: "tray" });
   return (
-    <div ref={setNodeRef} className={[styles.tray, isOver ? styles.dragOver : ''].filter(Boolean).join(' ')}>
+    <div
+      ref={setNodeRef}
+      className={[styles.tray, isOver ? styles.dragOver : ""]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {children}
     </div>
-  )
+  );
 }
 
 // ── Draggable tray tile ───────────────────────────────────────────────
@@ -33,14 +40,14 @@ function DraggableTrayTile({
   isUsed,
   onClick,
 }: {
-  tile: TileData
-  isUsed: boolean
-  onClick: () => void
+  tile: TileData;
+  isUsed: boolean;
+  onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `tray-${tile.id}`,
     disabled: isUsed,
-  })
+  });
   return (
     <Tile
       ref={setNodeRef}
@@ -51,7 +58,7 @@ function DraggableTrayTile({
       {...listeners}
       {...attributes}
     />
-  )
+  );
 }
 
 // ── Slot (droppable + draggable when filled) ──────────────────────────
@@ -61,29 +68,41 @@ function SlotCell({
   solved,
   onReturn,
 }: {
-  slotIndex: number
-  val: string | null
-  solved: boolean
-  onReturn: () => void
+  slotIndex: number;
+  val: string | null;
+  solved: boolean;
+  onReturn: () => void;
 }) {
-  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `slot-${slotIndex}` })
-  const { setNodeRef: setDragRef, attributes, listeners, isDragging } = useDraggable({
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `slot-${slotIndex}`,
+  });
+  const {
+    setNodeRef: setDragRef,
+    attributes,
+    listeners,
+    isDragging,
+  } = useDraggable({
     id: `slot-${slotIndex}`,
     disabled: val === null || solved,
-  })
+  });
 
-  const filled = val !== null
+  const filled = val !== null;
   const classes = [
     styles.slot,
-    filled ? styles.filled : '',
-    filled && isSym(val!) ? styles.symFilled : '',
-    isOver && !isDragging ? styles.dragOver : '',
-    isDragging ? styles.slotDragging : '',
-  ].filter(Boolean).join(' ')
+    filled ? styles.filled : "",
+    filled && isSym(val!) ? styles.symFilled : "",
+    isOver && !isDragging ? styles.dragOver : "",
+    isDragging ? styles.slotDragging : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div
-      ref={(node: HTMLElement | null) => { setDropRef(node); setDragRef(node) }}
+      ref={(node: HTMLElement | null) => {
+        setDropRef(node);
+        setDragRef(node);
+      }}
       className={classes}
       onClick={filled && !solved ? onReturn : undefined}
       {...attributes}
@@ -92,11 +111,29 @@ function SlotCell({
       {val}
       {filled && <span className={styles.rx}>✕</span>}
     </div>
-  )
+  );
 }
 
 // ── Main board ────────────────────────────────────────────────────────
-export default function NumerisBoard({ puzzle }: { puzzle: Puzzle }) {
+export default function NumerisBoard({
+  puzzle,
+  puzzleId,
+}: {
+  puzzle: Puzzle;
+  puzzleId: string | null;
+}) {
+  const { user } = useAuth();
+  const scoreSubmitted = useRef(false);
+
+  const [existingScore, setExistingScore] = useState<number | null>(null);
+  const [loadingScore, setLoadingScore] = useState(!!puzzleId);
+
+  const savedElapsed = puzzleId
+    ? parseInt(localStorage.getItem(`numeris-${puzzleId}`) || "0", 10)
+    : 0;
+
+  const paused = loadingScore || existingScore !== null;
+
   const {
     tiles,
     slotContents,
@@ -110,75 +147,157 @@ export default function NumerisBoard({ puzzle }: { puzzle: Puzzle }) {
     swapSlots,
     returnSlot,
     clearBoard,
-  } = useNumeris(puzzle)
+    resetBoard,
+  } = useNumeris(puzzle, { initialElapsed: savedElapsed, paused });
 
-  const [activeId, setActiveId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!user || !puzzleId) return;
+    supabase
+      .from("scores")
+      .select("time_seconds, solution")
+      .eq("user_id", user.id)
+      .eq("puzzle_id", puzzleId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setExistingScore(data.time_seconds);
+          if (data.solution) resetBoard(data.solution as (string | null)[]);
+        }
+        setLoadingScore(false);
+      });
+  }, [user, puzzleId, resetBoard]);
+
+  useEffect(() => {
+    if (!puzzleId || loadingScore || existingScore !== null) return;
+    localStorage.setItem(`numeris-${puzzleId}`, String(elapsed));
+  }, [elapsed, puzzleId, loadingScore, existingScore]);
+
+  useEffect(() => {
+    if (
+      !solved ||
+      !user ||
+      !puzzleId ||
+      scoreSubmitted.current ||
+      loadingScore ||
+      existingScore !== null
+    )
+      return;
+    scoreSubmitted.current = true;
+    localStorage.removeItem(`numeris-${puzzleId}`);
+    supabase
+      .from("scores")
+      .insert({
+        user_id: user.id,
+        puzzle_id: puzzleId,
+        time_seconds: elapsed,
+        solution: slotContents,
+      });
+  }, [
+    solved,
+    user,
+    puzzleId,
+    elapsed,
+    slotContents,
+    loadingScore,
+    existingScore,
+  ]);
+
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
-  )
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    }),
+  );
 
   const handleDragStart = useCallback(({ active }: DragStartEvent) => {
-    setActiveId(active.id as string)
-  }, [])
+    setActiveId(active.id as string);
+  }, []);
 
-  const handleDragEnd = useCallback(({ active, over }: DragEndEvent) => {
-    setActiveId(null)
-    if (!over) return
-    const aid = active.id as string
-    const oid = over.id as string
+  const handleDragEnd = useCallback(
+    ({ active, over }: DragEndEvent) => {
+      setActiveId(null);
+      if (!over) return;
+      const aid = active.id as string;
+      const oid = over.id as string;
 
-    if (aid.startsWith('tray-')) {
-      if (oid.startsWith('slot-')) {
-        placeTile(parseInt(aid.slice(5)), parseInt(oid.slice(5)))
+      if (aid.startsWith("tray-")) {
+        if (oid.startsWith("slot-")) {
+          placeTile(parseInt(aid.slice(5)), parseInt(oid.slice(5)));
+        }
+      } else if (aid.startsWith("slot-")) {
+        const fromSlot = parseInt(aid.slice(5));
+        if (oid.startsWith("slot-")) {
+          const toSlot = parseInt(oid.slice(5));
+          if (fromSlot !== toSlot) swapSlots(fromSlot, toSlot);
+        } else if (oid === "tray") {
+          returnSlot(fromSlot);
+        }
       }
-    } else if (aid.startsWith('slot-')) {
-      const fromSlot = parseInt(aid.slice(5))
-      if (oid.startsWith('slot-')) {
-        const toSlot = parseInt(oid.slice(5))
-        if (fromSlot !== toSlot) swapSlots(fromSlot, toSlot)
-      } else if (oid === 'tray') {
-        returnSlot(fromSlot)
-      }
-    }
-  }, [placeTile, swapSlots, returnSlot])
+    },
+    [placeTile, swapSlots, returnSlot],
+  );
 
-  const handleTileClick = useCallback((tileId: number) => {
-    if (solved) return
-    const firstEmpty = slotContents.findIndex(s => s === null)
-    if (firstEmpty !== -1) placeTile(tileId, firstEmpty)
-  }, [solved, slotContents, placeTile])
+  const handleTileClick = useCallback(
+    (tileId: number) => {
+      if (solved) return;
+      const firstEmpty = slotContents.findIndex((s) => s === null);
+      if (firstEmpty !== -1) placeTile(tileId, firstEmpty);
+    },
+    [solved, slotContents, placeTile],
+  );
 
   const activeTileVal = (() => {
-    if (!activeId) return null
-    if (activeId.startsWith('tray-')) {
-      return tiles.find(t => t.id === parseInt(activeId.slice(5)))?.val ?? null
+    if (!activeId) return null;
+    if (activeId.startsWith("tray-")) {
+      return (
+        tiles.find((t) => t.id === parseInt(activeId.slice(5)))?.val ?? null
+      );
     }
-    if (activeId.startsWith('slot-')) {
-      return slotContents[parseInt(activeId.slice(5))]
+    if (activeId.startsWith("slot-")) {
+      return slotContents[parseInt(activeId.slice(5))];
     }
-    return null
-  })()
+    return null;
+  })();
 
   const fmt = (s: number) =>
-    Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')
+    Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
 
   const resultClass = [
     styles.resultBox,
-    currentResult === null ? '' : currentResult === target ? styles.match : allFilled ? styles.nomatch : '',
-  ].filter(Boolean).join(' ')
+    currentResult === null
+      ? ""
+      : currentResult === target
+        ? styles.match
+        : allFilled
+          ? styles.nomatch
+          : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       <div className={styles.nr}>
         <div className={styles.gTitle}>Numeris</div>
         <div className={styles.gSub}>Daily Number Puzzle</div>
 
         <div className={styles.timerWrap}>
           <div className={styles.timerLbl}>Time</div>
-          <div className={[styles.timer, solved ? styles.solved : ''].filter(Boolean).join(' ')}>
-            {fmt(elapsed)}
+          <div
+            className={[
+              styles.timer,
+              solved || existingScore !== null ? styles.solved : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            {fmt(existingScore ?? elapsed)}
           </div>
         </div>
 
@@ -199,13 +318,13 @@ export default function NumerisBoard({ puzzle }: { puzzle: Puzzle }) {
           ))}
           <div className={styles.eqSep}>=</div>
           <div className={resultClass}>
-            {currentResult === null ? '?' : currentResult}
+            {currentResult === null ? "?" : currentResult}
           </div>
         </div>
 
         <div className={styles.tilesLbl}>Your tiles</div>
         <TrayArea>
-          {tiles.map(t => (
+          {tiles.map((t) => (
             <DraggableTrayTile
               key={t.id}
               tile={t}
@@ -216,13 +335,17 @@ export default function NumerisBoard({ puzzle }: { puzzle: Puzzle }) {
         </TrayArea>
 
         <div className={styles.controls}>
-          <button className={styles.btn} onClick={clearBoard}>Clear</button>
+          <button className={styles.btn} onClick={clearBoard}>
+            Clear
+          </button>
         </div>
 
-        {solved && (
-          <div className={[styles.solvedBanner, styles.show].join(' ')}>
+        {(solved || existingScore !== null) && (
+          <div className={[styles.solvedBanner, styles.show].join(" ")}>
             <div className={styles.solvedTxt}>Solved!</div>
-            <div className={styles.solvedSub}>Completed in {fmt(elapsed)}</div>
+            <div className={styles.solvedSub}>
+              Completed in {fmt(existingScore ?? elapsed)}
+            </div>
           </div>
         )}
       </div>
@@ -231,5 +354,5 @@ export default function NumerisBoard({ puzzle }: { puzzle: Puzzle }) {
         {activeTileVal != null ? <Tile val={activeTileVal} isOverlay /> : null}
       </DragOverlay>
     </DndContext>
-  )
+  );
 }
