@@ -1,0 +1,625 @@
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap");
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .nr {
+    font-family: "Outfit", sans-serif;
+    background: #fff;
+    color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 3rem;
+    gap: 0;
+    min-height: 580px;
+  }
+  .g-title {
+    font-family: "DM Serif Display", serif;
+    font-size: 42px;
+    color: #1a1a1a;
+    margin-bottom: 0.15rem;
+  }
+  .g-sub {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #ccc;
+    font-weight: 500;
+    margin-bottom: 1.6rem;
+  }
+  .timer-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.6rem;
+  }
+  .timer-lbl {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #ccc;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .timer {
+    font-family: "DM Mono", monospace;
+    font-size: 36px;
+    font-weight: 500;
+    color: #1a1a1a;
+    letter-spacing: 2px;
+    transition: color 0.3s;
+  }
+  .timer.solved {
+    color: #1d9e75;
+  }
+  .target-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.8rem;
+  }
+  .target-lbl {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #ccc;
+    font-weight: 500;
+  }
+  .target-num {
+    font-family: "DM Serif Display", serif;
+    font-size: 52px;
+    color: #1a1a1a;
+    line-height: 1;
+  }
+  .eq-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 2rem;
+    min-height: 76px;
+    padding: 0 0.5rem;
+    width: 100%;
+    max-width: 600px;
+  }
+  .slot {
+    width: 52px;
+    height: 58px;
+    border: 1.5px dashed #ddd;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "DM Mono", monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      background 0.15s;
+    background: #fff;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .slot:hover {
+    border-color: #aaa;
+    background: #fafafa;
+  }
+  .slot.drag-over {
+    border-color: #378add;
+    background: #e6f1fb;
+  }
+  .slot.filled {
+    border-style: solid;
+    border-color: #e0e0e0;
+    background: #fafafa;
+  }
+  .slot.filled.sym-filled {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+  .slot.filled:hover {
+    border-color: #e24b4a;
+    background: #fcebeb;
+    color: #1a1a1a;
+  }
+  .slot.filled.sym-filled:hover {
+    border-color: #e24b4a;
+    background: #fcebeb;
+    color: #e24b4a;
+  }
+  .slot .rx {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 9px;
+    color: #e24b4a;
+    opacity: 0;
+    transition: opacity 0.1s;
+    pointer-events: none;
+    font-weight: 600;
+  }
+  .slot.filled:hover .rx {
+    opacity: 1;
+  }
+  .eq-sep {
+    font-family: "DM Mono", monospace;
+    font-size: 24px;
+    color: #ccc;
+  }
+  .result-box {
+    min-width: 60px;
+    height: 58px;
+    padding: 0 12px;
+    border-radius: 12px;
+    border: 1.5px solid #e0e0e0;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "DM Mono", monospace;
+    font-size: 20px;
+    color: #ccc;
+    transition: all 0.2s;
+  }
+  .result-box.match {
+    color: #1d9e75;
+    border-color: #9fe1cb;
+    background: #e1f5ee;
+  }
+  .result-box.nomatch {
+    color: #e24b4a;
+    border-color: #f7c1c1;
+    background: #fcebeb;
+  }
+  .tiles-lbl {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #ccc;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .tray {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 1.2rem 1.5rem;
+    border-radius: 16px;
+    border: 1px solid #f0f0f0;
+    background: #fafafa;
+    min-height: 84px;
+    width: 100%;
+    max-width: 560px;
+  }
+  .tray.drag-over {
+    border-color: #378add;
+    background: #f0f7ff;
+  }
+  .tile {
+    width: 58px;
+    height: 58px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "DM Mono", monospace;
+    font-size: 22px;
+    font-weight: 500;
+    cursor: grab;
+    transition:
+      transform 0.1s,
+      box-shadow 0.1s,
+      opacity 0.15s;
+    border: 1.5px solid #e8e8e8;
+    background: #fff;
+    color: #1a1a1a;
+    flex-shrink: 0;
+  }
+  .tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  .tile.sym {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+  .tile.dragging {
+    opacity: 0.35;
+    transform: none;
+    box-shadow: none;
+  }
+  .tile.used {
+    opacity: 0.18;
+    pointer-events: none;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 1.5rem;
+  }
+  .btn {
+    padding: 10px 24px;
+    border-radius: 100px;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    font-family: "Outfit", sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover {
+    border-color: #aaa;
+    color: #1a1a1a;
+  }
+  .btn.primary {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+  .btn.primary:hover {
+    background: #333;
+  }
+  .solved-banner {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: 1rem;
+    animation: fiu 0.4s ease;
+  }
+  .solved-banner.show {
+    display: flex;
+  }
+  .solved-txt {
+    font-family: "DM Serif Display", serif;
+    font-size: 28px;
+    color: #1d9e75;
+  }
+  .solved-sub {
+    font-size: 13px;
+    color: #aaa;
+  }
+  @keyframes fiu {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
+<h2
+  style="
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  "
+>
+  Numeris — arrange tiles to reach the target number
+</h2>
+
+<div class="nr">
+  <div class="g-title">Numeris</div>
+  <div class="g-sub">Daily Number Puzzle</div>
+  <div class="timer-wrap">
+    <div class="timer-lbl">Time</div>
+    <div class="timer" id="timer">0:00</div>
+  </div>
+  <div class="target-wrap">
+    <div class="target-lbl">Target</div>
+    <div class="target-num" id="target-display">—</div>
+  </div>
+  <div class="eq-area" id="eq-area"></div>
+  <div class="tiles-lbl">Your tiles</div>
+  <div class="tray" id="tray"></div>
+  <div class="controls">
+    <button class="btn" onclick="clearBoard()">Clear</button>
+    <button class="btn primary" onclick="newPuzzle()">New Puzzle</button>
+  </div>
+  <div class="solved-banner" id="solved-banner">
+    <div class="solved-txt">Solved!</div>
+    <div class="solved-sub" id="solved-sub"></div>
+  </div>
+</div>
+
+<script>
+  const OPS = ["+", "−", "×", "÷"];
+  const PARENS = ["(", ")"];
+  function isSym(v) {
+    return v !== null && (OPS.includes(v) || PARENS.includes(v) || v === "^");
+  }
+  function isDigit(v) {
+    return v !== null && !isSym(v);
+  }
+
+  const PUZZLES = [
+    { target: 15, tiles: ["3", "2", "−", "+", "8", "×", "3"], slots: 5 },
+    { target: 16, tiles: ["2", "1", "0", "4", "×", "−"], slots: 5 },
+    { target: 24, tiles: ["6", "4", "×", "−", "2", "+", "8"], slots: 4 },
+    { target: 19, tiles: ["5", "3", "+", "×", "4", "−", "1"], slots: 5 },
+    { target: 7, tiles: ["2", "1", "0", "+", "×", "−", "4"], slots: 5 },
+    { target: 100, tiles: ["(", "2", "+", "8", ")", "^", "2"], slots: 7 },
+    { target: 27, tiles: ["3", "^", "(", "1", "+", "2", ")"], slots: 7 },
+    { target: 30, tiles: ["(", "4", "+", "1", ")", "×", "6"], slots: 7 },
+    { target: 12, tiles: ["0", "2", "×", "6", "+", "3", "−", "1"], slots: 5 },
+  ];
+
+  let puzzle, tilesData, slotContents, elapsed, solved, timerInterval;
+
+  // drag state: { source: 'tray'|'slot', index: number }
+  let drag = null;
+
+  function fmt(s) {
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+
+  function evalSlots(slots) {
+    let expr = "",
+      i = 0;
+    while (i < slots.length) {
+      const v = slots[i];
+      if (v === null) {
+        i++;
+        continue;
+      }
+      if (isDigit(v)) {
+        let run = "";
+        while (i < slots.length && slots[i] !== null && isDigit(slots[i])) {
+          run += slots[i];
+          i++;
+        }
+        expr += parseInt(run, 10);
+      } else if (v === "^") {
+        expr += "**";
+        i++;
+      } else if (OPS.includes(v)) {
+        expr += v === "×" ? "*" : v === "÷" ? "/" : v === "−" ? "-" : v;
+        i++;
+      } else {
+        expr += v;
+        i++;
+      }
+    }
+    if (!expr) return null;
+    if (/^[+*\/]/.test(expr) || /[+\-*\/]$/.test(expr)) return null;
+    try {
+      const r = Function('"use strict";return(' + expr + ")")();
+      return isFinite(r) ? Math.round(r * 1e9) / 1e9 : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function syncUsed() {
+    const tempUsed = [];
+    slotContents.forEach((v) => {
+      if (v !== null) {
+        const idx = tilesData.findIndex(
+          (t, i) => t.val === v && !tempUsed.includes(i),
+        );
+        if (idx !== -1) tempUsed.push(idx);
+      }
+    });
+    tilesData.forEach((t, i) => (t.used = tempUsed.includes(i)));
+  }
+
+  function checkSolved() {
+    if (slotContents.some((s) => s === null)) return;
+    const r = evalSlots(slotContents);
+    if (r !== null && r === puzzle.target) {
+      solved = true;
+      clearInterval(timerInterval);
+      document.getElementById("timer").classList.add("solved");
+      document.getElementById("solved-banner").classList.add("show");
+      document.getElementById("solved-sub").textContent =
+        "Completed in " + fmt(elapsed);
+    }
+  }
+
+  // Drop onto a board slot
+  function dropOnSlot(targetSlotIdx) {
+    if (!drag) return;
+    if (drag.source === "tray") {
+      const tileVal = tilesData[drag.index].val;
+      const displaced = slotContents[targetSlotIdx];
+      slotContents[targetSlotIdx] = tileVal;
+      // if slot was filled, that tile goes back to tray (just syncUsed handles it)
+    } else if (drag.source === "slot") {
+      const fromIdx = drag.index;
+      if (fromIdx === targetSlotIdx) return;
+      // swap
+      const tmp = slotContents[targetSlotIdx];
+      slotContents[targetSlotIdx] = slotContents[fromIdx];
+      slotContents[fromIdx] = tmp;
+    }
+    syncUsed();
+    render();
+    checkSolved();
+  }
+
+  // Drop onto tray — return tile to tray
+  function dropOnTray() {
+    if (!drag) return;
+    if (drag.source === "slot") {
+      slotContents[drag.index] = null;
+      syncUsed();
+      render();
+    }
+    // tray->tray drop is a no-op
+  }
+
+  function render() {
+    syncUsed();
+    const area = document.getElementById("eq-area");
+    area.innerHTML = "";
+
+    slotContents.forEach((val, si) => {
+      const s = document.createElement("div");
+      const filled = val !== null;
+      s.className =
+        "slot" +
+        (filled ? " filled" : "") +
+        (filled && isSym(val) ? " sym-filled" : "");
+      s.textContent = filled ? val : "";
+      s.draggable = filled;
+
+      if (filled) {
+        const rx = document.createElement("span");
+        rx.className = "rx";
+        rx.textContent = "✕";
+        s.appendChild(rx);
+        // click to return
+        s.addEventListener("click", () => {
+          if (solved) return;
+          slotContents[si] = null;
+          syncUsed();
+          render();
+        });
+        // drag from slot
+        s.addEventListener("dragstart", (e) => {
+          drag = { source: "slot", index: si };
+          setTimeout(() => s.classList.add("dragging"), 0);
+        });
+        s.addEventListener("dragend", () => {
+          s.classList.remove("dragging");
+          drag = null;
+        });
+      }
+
+      s.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        s.classList.add("drag-over");
+      });
+      s.addEventListener("dragleave", () => s.classList.remove("drag-over"));
+      s.addEventListener("drop", (e) => {
+        e.preventDefault();
+        s.classList.remove("drag-over");
+        dropOnSlot(si);
+      });
+      area.appendChild(s);
+    });
+
+    const eq = document.createElement("div");
+    eq.className = "eq-sep";
+    eq.textContent = "=";
+    area.appendChild(eq);
+
+    const res = document.createElement("div");
+    const val = evalSlots(slotContents);
+    const allFilled = slotContents.every((s) => s !== null);
+    res.className =
+      "result-box" +
+      (val === null
+        ? ""
+        : val === puzzle.target
+          ? " match"
+          : allFilled
+            ? " nomatch"
+            : "");
+    res.textContent = val === null ? "?" : val;
+    area.appendChild(res);
+
+    // tray
+    const tray = document.getElementById("tray");
+    tray.innerHTML = "";
+    tray.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      tray.classList.add("drag-over");
+    });
+    tray.addEventListener("dragleave", (e) => {
+      if (!tray.contains(e.relatedTarget)) tray.classList.remove("drag-over");
+    });
+    tray.addEventListener("drop", (e) => {
+      e.preventDefault();
+      tray.classList.remove("drag-over");
+      dropOnTray();
+    });
+
+    tilesData.forEach((t, i) => {
+      const tile = document.createElement("div");
+      tile.className =
+        "tile" + (isSym(t.val) ? " sym" : "") + (t.used ? " used" : "");
+      tile.textContent = t.val;
+      tile.draggable = !t.used;
+
+      tile.addEventListener("dragstart", (e) => {
+        if (t.used) {
+          e.preventDefault();
+          return;
+        }
+        drag = { source: "tray", index: i };
+        setTimeout(() => tile.classList.add("dragging"), 0);
+      });
+      tile.addEventListener("dragend", () => {
+        tile.classList.remove("dragging");
+        drag = null;
+      });
+
+      // click to place in first empty slot
+      tile.addEventListener("click", () => {
+        if (t.used) return;
+        const firstEmpty = slotContents.findIndex((s) => s === null);
+        if (firstEmpty !== -1) {
+          slotContents[firstEmpty] = t.val;
+          syncUsed();
+          render();
+          checkSolved();
+        }
+      });
+
+      tray.appendChild(tile);
+    });
+  }
+
+  function clearBoard() {
+    if (solved) return;
+    slotContents = Array(puzzle.slots).fill(null);
+    tilesData.forEach((t) => (t.used = false));
+    render();
+  }
+
+  function startTimer() {
+    clearInterval(timerInterval);
+    elapsed = 0;
+    document.getElementById("timer").textContent = "0:00";
+    document.getElementById("timer").classList.remove("solved");
+    timerInterval = setInterval(() => {
+      if (!solved) {
+        elapsed++;
+        document.getElementById("timer").textContent = fmt(elapsed);
+      }
+    }, 1000);
+  }
+
+  function newPuzzle() {
+    solved = false;
+    drag = null;
+    document.getElementById("solved-banner").classList.remove("show");
+    puzzle = PUZZLES[Math.floor(Math.random() * PUZZLES.length)];
+    document.getElementById("target-display").textContent = puzzle.target;
+    tilesData = puzzle.tiles.map((v) => ({ val: v, used: false }));
+    slotContents = Array(puzzle.slots).fill(null);
+    render();
+    startTimer();
+  }
+
+  newPuzzle();
+</script>
