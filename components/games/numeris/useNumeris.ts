@@ -1,5 +1,3 @@
-'use client'
-
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
 export interface TileData {
@@ -11,12 +9,6 @@ export interface Puzzle {
   target: number
   tiles: string[]
   slots: number
-}
-
-const SAMPLE_PUZZLE: Puzzle = {
-  target: 100,
-  tiles: ['(', '2', '+', '8', ')', '^', '2'],
-  slots: 7,
 }
 
 const OPS = ['+', '−', '×', '÷']
@@ -65,11 +57,10 @@ function evalSlots(slotContents: (string | null)[]): number | null {
   }
 }
 
-export function useNumeris(puzzle: Puzzle = SAMPLE_PUZZLE) {
+export function useNumeris(puzzle: Puzzle) {
   const tiles = useMemo<TileData[]>(
     () => puzzle.tiles.map((val, id) => ({ val, id })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [puzzle.tiles]
   )
 
   const [slotContents, setSlotContents] = useState<(string | null)[]>(

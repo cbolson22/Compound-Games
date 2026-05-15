@@ -13,7 +13,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { useNumeris, isSym, type TileData } from './useNumeris'
+import { useNumeris, isSym, type TileData, type Puzzle } from './useNumeris'
 import Tile from './Tile'
 import styles from './numeris.module.css'
 
@@ -96,7 +96,7 @@ function SlotCell({
 }
 
 // ── Main board ────────────────────────────────────────────────────────
-export default function NumerisBoard() {
+export default function NumerisBoard({ puzzle }: { puzzle: Puzzle }) {
   const {
     tiles,
     slotContents,
@@ -110,7 +110,7 @@ export default function NumerisBoard() {
     swapSlots,
     returnSlot,
     clearBoard,
-  } = useNumeris()
+  } = useNumeris(puzzle)
 
   const [activeId, setActiveId] = useState<string | null>(null)
 
