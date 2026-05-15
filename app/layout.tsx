@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { DM_Serif_Display, DM_Mono, Outfit } from 'next/font/google'
+import AuthProvider from '@/components/auth/AuthProvider'
 import './globals.css'
 
 const dmSerif = DM_Serif_Display({
@@ -32,7 +33,7 @@ export default function RootLayout({
       lang="en"
       className={`${dmSerif.variable} ${dmMono.variable} ${outfit.variable}`}
     >
-      <body>{children}</body>
+      <body><AuthProvider>{children}</AuthProvider></body>
     </html>
   )
 }
