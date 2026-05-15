@@ -19,6 +19,13 @@ export default function Home() {
           <span className="font-serif text-2xl">Numeris</span>
           <span className="text-sm text-[#aaa]">Daily Number Puzzle</span>
         </Link>
+        <Link
+          href="/leaderboard"
+          className="flex flex-col gap-1 p-6 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors"
+        >
+          <span className="font-serif text-2xl">Leaderboard</span>
+          <span className="text-sm text-[#aaa]">Today&apos;s Rankings</span>
+        </Link>
       </div>
 
       <div className="mt-12 text-sm text-[#aaa]">

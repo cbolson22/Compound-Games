@@ -184,14 +184,14 @@ export default function NumerisBoard({
       return;
     scoreSubmitted.current = true;
     localStorage.removeItem(`numeris-${puzzleId}`);
-    supabase
-      .from("scores")
-      .insert({
+    ;(async () => {
+      await supabase.from("scores").insert({
         user_id: user.id,
         puzzle_id: puzzleId,
         time_seconds: elapsed,
         solution: slotContents,
       });
+    })();
   }, [
     solved,
     user,
