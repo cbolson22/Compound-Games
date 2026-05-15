@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import NumerisClient from './NumerisClient'
 import { supabase } from '@/lib/supabase'
+import { getTodaysCT } from '@/lib/dates'
 import type { Puzzle } from '@/components/games/numeris/useNumeris'
 
 const FALLBACK_PUZZLE: Puzzle = {
@@ -11,7 +12,7 @@ const FALLBACK_PUZZLE: Puzzle = {
 }
 
 async function getTodaysPuzzle(): Promise<{ puzzle: Puzzle; puzzleId: string | null }> {
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodaysCT()
   const { data } = await supabase
     .from('daily_puzzles')
     .select('id, puzzle_data')

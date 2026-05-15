@@ -3,6 +3,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { getUserStreak } from "@/lib/streaks";
+import { fmtTime } from "@/lib/format";
 import {
   DndContext,
   DragOverlay,
@@ -127,6 +129,7 @@ export default function NumerisBoard({
 
   const [existingScore, setExistingScore] = useState<number | null>(null);
   const [loadingScore, setLoadingScore] = useState(!!puzzleId);
+  const [streak, setStreak] = useState(0);
 
   const savedElapsed = puzzleId
     ? parseInt(localStorage.getItem(`numeris-${puzzleId}`) || "0", 10)
@@ -162,6 +165,7 @@ export default function NumerisBoard({
         if (data) {
           setExistingScore(data.time_seconds);
           if (data.solution) resetBoard(data.solution as (string | null)[]);
+          if (user) getUserStreak(user.id, 'numeris').then(setStreak)
         }
         setLoadingScore(false);
       });
@@ -191,6 +195,8 @@ export default function NumerisBoard({
         time_seconds: elapsed,
         solution: slotContents,
       });
+      const s = await getUserStreak(user.id, 'numeris')
+      setStreak(s)
     })();
   }, [
     solved,
@@ -261,8 +267,6 @@ export default function NumerisBoard({
     return null;
   })();
 
-  const fmt = (s: number) =>
-    Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
 
   const resultClass = [
     styles.resultBox,
@@ -297,7 +301,7 @@ export default function NumerisBoard({
               .filter(Boolean)
               .join(" ")}
           >
-            {fmt(existingScore ?? elapsed)}
+            {fmtTime(existingScore ?? elapsed)}
           </div>
         </div>
 
@@ -344,8 +348,11 @@ export default function NumerisBoard({
           <div className={[styles.solvedBanner, styles.show].join(" ")}>
             <div className={styles.solvedTxt}>Solved!</div>
             <div className={styles.solvedSub}>
-              Completed in {fmt(existingScore ?? elapsed)}
+              Completed in {fmtTime(existingScore ?? elapsed)}
             </div>
+            {streak > 0 && (
+              <div className={styles.solvedSub}>{streak}🔥</div>
+            )}
           </div>
         )}
       </div>

@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { getStreaksForUsers } from "@/lib/streaks";
+import { fmtTime } from "@/lib/format";
+import { getTodaysCT } from "@/lib/dates";
 
 export const metadata: Metadata = {
   title: "Leaderboard — Compound Games",
 };
 
-type ScoreRow = { time_seconds: number; profiles: { username: string } | null }
+type ScoreRow = { user_id: string; time_seconds: number; profiles: { username: string } | null };
 
 async function getTodaysScores(): Promise<ScoreRow[]> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodaysCT();
 
   const { data: puzzle } = await supabase
     .from("daily_puzzles")
@@ -22,19 +25,16 @@ async function getTodaysScores(): Promise<ScoreRow[]> {
 
   const { data } = await supabase
     .from("scores")
-    .select("time_seconds, profiles(username)")
+    .select("user_id, time_seconds, profiles(username)")
     .eq("puzzle_id", puzzle.id)
     .order("time_seconds", { ascending: true });
 
-  return (data ?? []) as ScoreRow[];
-}
-
-function fmt(s: number) {
-  return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  return (data ?? []) as unknown as ScoreRow[];
 }
 
 export default async function LeaderboardPage() {
   const scores = await getTodaysScores();
+  const streaks = await getStreaksForUsers(scores.map(s => s.user_id), 'numeris');
 
   return (
     <main className="min-h-screen flex flex-col items-center p-8">
@@ -65,8 +65,11 @@ export default async function LeaderboardPage() {
               <span className="flex-1 text-sm">
                 {score.profiles?.username ?? "—"}
               </span>
+              {(streaks[score.user_id] ?? 0) > 0 && (
+                <span className="text-sm text-[#aaa]">{streaks[score.user_id]}🔥</span>
+              )}
               <span className="font-mono text-sm">
-                {fmt(score.time_seconds)}
+                {fmtTime(score.time_seconds)}
               </span>
             </div>
           ))}
