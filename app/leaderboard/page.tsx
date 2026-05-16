@@ -13,13 +13,13 @@ export const metadata: Metadata = {
 
 type ScoreRow = { user_id: string; time_seconds: number; profiles: { username: string } | null };
 
-async function getTodaysScores(): Promise<ScoreRow[]> {
+async function getScores(game: string): Promise<ScoreRow[]> {
   const today = getTodaysCT();
 
   const { data: puzzle } = await supabase
     .from("daily_puzzles")
     .select("id")
-    .eq("game", "numeris")
+    .eq("game", game)
     .eq("puzzle_date", today)
     .single();
 
@@ -34,49 +34,61 @@ async function getTodaysScores(): Promise<ScoreRow[]> {
   return (data ?? []) as unknown as ScoreRow[];
 }
 
+function ScoreList({ scores, streaks }: { scores: ScoreRow[]; streaks: Record<string, number> }) {
+  if (scores.length === 0) return <p className="text-sm text-[#aaa]">No solves yet today.</p>;
+  return (
+    <div className="w-full max-w-sm flex flex-col gap-2">
+      {scores.map((score, i) => (
+        <div key={i} className="flex items-center gap-4 px-4 py-3 border border-[#f0f0f0] rounded-xl">
+          <span className="text-sm text-[#aaa] w-5 shrink-0">{i + 1}</span>
+          <span className="flex-1 text-sm">{score.profiles?.username ?? "—"}</span>
+          {(streaks[score.user_id] ?? 0) > 0 && (
+            <span className="text-sm text-[#aaa]">{streaks[score.user_id]}🔥</span>
+          )}
+          <span className="font-mono text-sm">{fmtTime(score.time_seconds)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default async function LeaderboardPage() {
-  const scores = await getTodaysScores();
-  const streaks = await getStreaksForUsers(scores.map(s => s.user_id), 'numeris');
+  const [numerisScores, lumisScores] = await Promise.all([
+    getScores('numeris'),
+    getScores('lumis'),
+  ]);
+
+  const allUserIds = [...new Set([...numerisScores, ...lumisScores].map(s => s.user_id))];
+  const [numerisStreaks, lumisStreaks] = await Promise.all([
+    getStreaksForUsers(allUserIds, 'numeris'),
+    getStreaksForUsers(allUserIds, 'lumis'),
+  ]);
 
   return (
     <main className="min-h-screen flex flex-col items-center p-8">
       <nav className="w-full max-w-sm mb-8">
-        <Link
-          href="/"
-          className="text-sm text-[#bbb] hover:text-[#1a1a1a] transition-colors"
-        >
+        <Link href="/" className="text-sm text-[#bbb] hover:text-[#1a1a1a] transition-colors">
           ← Home
         </Link>
       </nav>
 
-      <h1 className="font-serif text-3xl mb-1">Numeris</h1>
-      <p className="text-xs uppercase tracking-widest text-[#ccc] mb-8">
-        Today&apos;s Leaderboard
-      </p>
+      <div className="w-full max-w-sm flex flex-col gap-10">
+        <section className="flex flex-col items-center gap-4">
+          <div className="text-center">
+            <h2 className="font-serif text-3xl mb-1">Numeris</h2>
+            <p className="text-xs uppercase tracking-widest text-[#ccc]">Today&apos;s Leaderboard</p>
+          </div>
+          <ScoreList scores={numerisScores} streaks={numerisStreaks} />
+        </section>
 
-      {scores.length === 0 ? (
-        <p className="text-sm text-[#aaa]">No solves yet today.</p>
-      ) : (
-        <div className="w-full max-w-sm flex flex-col gap-2">
-          {scores.map((score, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-4 px-4 py-3 border border-[#f0f0f0] rounded-xl"
-            >
-              <span className="text-sm text-[#aaa] w-5 shrink-0">{i + 1}</span>
-              <span className="flex-1 text-sm">
-                {score.profiles?.username ?? "—"}
-              </span>
-              {(streaks[score.user_id] ?? 0) > 0 && (
-                <span className="text-sm text-[#aaa]">{streaks[score.user_id]}🔥</span>
-              )}
-              <span className="font-mono text-sm">
-                {fmtTime(score.time_seconds)}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+        <section className="flex flex-col items-center gap-4">
+          <div className="text-center">
+            <h2 className="font-serif text-3xl mb-1">Lumis</h2>
+            <p className="text-xs uppercase tracking-widest text-[#ccc]">Today&apos;s Leaderboard</p>
+          </div>
+          <ScoreList scores={lumisScores} streaks={lumisStreaks} />
+        </section>
+      </div>
     </main>
   );
 }

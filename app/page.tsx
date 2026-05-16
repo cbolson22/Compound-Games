@@ -7,11 +7,13 @@ import { getUserStreak } from '@/lib/streaks'
 
 export default function Home() {
   const { user, profile, loading, signOut } = useAuth()
-  const [streak, setStreak] = useState(0)
+  const [numerisStreak, setNumerisStreak] = useState(0)
+  const [lumisStreak, setLumisStreak] = useState(0)
 
   useEffect(() => {
     if (!user) return
-    getUserStreak(user.id, 'numeris').then(setStreak)
+    getUserStreak(user.id, 'numeris').then(setNumerisStreak)
+    getUserStreak(user.id, 'lumis').then(setLumisStreak)
   }, [user])
 
   return (
@@ -26,9 +28,19 @@ export default function Home() {
         >
           <div className="flex items-center justify-between">
             <span className="font-serif text-2xl">Numeris</span>
-            {streak > 0 && <span className="text-sm text-[#aaa]">{streak}🔥</span>}
+            {numerisStreak > 0 && <span className="text-sm text-[#aaa]">{numerisStreak}🔥</span>}
           </div>
           <span className="text-sm text-[#aaa]">Daily Number Puzzle</span>
+        </Link>
+        <Link
+          href="/lumis"
+          className="flex flex-col gap-1 p-6 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-serif text-2xl">Lumis</span>
+            {lumisStreak > 0 && <span className="text-sm text-[#aaa]">{lumisStreak}🔥</span>}
+          </div>
+          <span className="text-sm text-[#aaa]">Daily Memory Puzzle</span>
         </Link>
         <Link
           href="/leaderboard"
