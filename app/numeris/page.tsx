@@ -25,6 +25,8 @@ async function getTodaysPuzzle(): Promise<{ puzzle: Puzzle; puzzleId: string | n
   }
 }
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Numeris — Compound Games',
 }

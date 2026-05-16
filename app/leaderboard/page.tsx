@@ -5,6 +5,8 @@ import { getStreaksForUsers } from "@/lib/streaks";
 import { fmtTime } from "@/lib/format";
 import { getTodaysCT } from "@/lib/dates";
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: "Leaderboard — Compound Games",
 };
