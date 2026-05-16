@@ -11,30 +11,43 @@ export const metadata: Metadata = {
   title: "Leaderboard — Compound Games",
 };
 
-type ScoreRow = { user_id: string; time_seconds: number; profiles: { username: string } | null };
+type TimeScoreRow = { user_id: string; time_seconds: number; profiles: { username: string } | null };
+type PointScoreRow = { user_id: string; score: number; profiles: { username: string } | null };
 
-async function getScores(game: string): Promise<ScoreRow[]> {
+async function getPuzzleId(game: string): Promise<string | null> {
   const today = getTodaysCT();
-
-  const { data: puzzle } = await supabase
+  const { data } = await supabase
     .from("daily_puzzles")
     .select("id")
     .eq("game", game)
     .eq("puzzle_date", today)
     .single();
+  return data?.id ?? null;
+}
 
-  if (!puzzle) return [];
-
+async function getTimeScores(game: string): Promise<TimeScoreRow[]> {
+  const puzzleId = await getPuzzleId(game);
+  if (!puzzleId) return [];
   const { data } = await supabase
     .from("scores")
     .select("user_id, time_seconds, profiles(username)")
-    .eq("puzzle_id", puzzle.id)
+    .eq("puzzle_id", puzzleId)
     .order("time_seconds", { ascending: true });
-
-  return (data ?? []) as unknown as ScoreRow[];
+  return (data ?? []) as unknown as TimeScoreRow[];
 }
 
-function ScoreList({ scores, streaks }: { scores: ScoreRow[]; streaks: Record<string, number> }) {
+async function getPointScores(game: string): Promise<PointScoreRow[]> {
+  const puzzleId = await getPuzzleId(game);
+  if (!puzzleId) return [];
+  const { data } = await supabase
+    .from("scores")
+    .select("user_id, score, profiles(username)")
+    .eq("puzzle_id", puzzleId)
+    .order("score", { ascending: false });
+  return (data ?? []) as unknown as PointScoreRow[];
+}
+
+function TimeScoreList({ scores, streaks }: { scores: TimeScoreRow[]; streaks: Record<string, number> }) {
   if (scores.length === 0) return <p className="text-sm text-[#aaa]">No solves yet today.</p>;
   return (
     <div className="w-full max-w-sm flex flex-col gap-2">
@@ -52,16 +65,36 @@ function ScoreList({ scores, streaks }: { scores: ScoreRow[]; streaks: Record<st
   );
 }
 
+function PointScoreList({ scores, streaks }: { scores: PointScoreRow[]; streaks: Record<string, number> }) {
+  if (scores.length === 0) return <p className="text-sm text-[#aaa]">No plays yet today.</p>;
+  return (
+    <div className="w-full max-w-sm flex flex-col gap-2">
+      {scores.map((score, i) => (
+        <div key={i} className="flex items-center gap-4 px-4 py-3 border border-[#f0f0f0] rounded-xl">
+          <span className="text-sm text-[#aaa] w-5 shrink-0">{i + 1}</span>
+          <span className="flex-1 text-sm">{score.profiles?.username ?? "—"}</span>
+          {(streaks[score.user_id] ?? 0) > 0 && (
+            <span className="text-sm text-[#aaa]">{streaks[score.user_id]}🔥</span>
+          )}
+          <span className="font-mono text-sm">{score.score} pts</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default async function LeaderboardPage() {
-  const [numerisScores, lumisScores] = await Promise.all([
-    getScores('numeris'),
-    getScores('lumis'),
+  const [numerisScores, lumisScores, verbaScores] = await Promise.all([
+    getTimeScores('numeris'),
+    getTimeScores('lumis'),
+    getPointScores('verba'),
   ]);
 
-  const allUserIds = [...new Set([...numerisScores, ...lumisScores].map(s => s.user_id))];
-  const [numerisStreaks, lumisStreaks] = await Promise.all([
+  const allUserIds = [...new Set([...numerisScores, ...lumisScores, ...verbaScores].map(s => s.user_id))];
+  const [numerisStreaks, lumisStreaks, verbaStreaks] = await Promise.all([
     getStreaksForUsers(allUserIds, 'numeris'),
     getStreaksForUsers(allUserIds, 'lumis'),
+    getStreaksForUsers(allUserIds, 'verba'),
   ]);
 
   return (
@@ -78,7 +111,7 @@ export default async function LeaderboardPage() {
             <h2 className="font-serif text-3xl mb-1">Numeris</h2>
             <p className="text-xs uppercase tracking-widest text-[#ccc]">Today&apos;s Leaderboard</p>
           </div>
-          <ScoreList scores={numerisScores} streaks={numerisStreaks} />
+          <TimeScoreList scores={numerisScores} streaks={numerisStreaks} />
         </section>
 
         <section className="flex flex-col items-center gap-4">
@@ -86,7 +119,15 @@ export default async function LeaderboardPage() {
             <h2 className="font-serif text-3xl mb-1">Lumis</h2>
             <p className="text-xs uppercase tracking-widest text-[#ccc]">Today&apos;s Leaderboard</p>
           </div>
-          <ScoreList scores={lumisScores} streaks={lumisStreaks} />
+          <TimeScoreList scores={lumisScores} streaks={lumisStreaks} />
+        </section>
+
+        <section className="flex flex-col items-center gap-4">
+          <div className="text-center">
+            <h2 className="font-serif text-3xl mb-1">Verba</h2>
+            <p className="text-xs uppercase tracking-widest text-[#ccc]">Today&apos;s Leaderboard</p>
+          </div>
+          <PointScoreList scores={verbaScores} streaks={verbaStreaks} />
         </section>
       </div>
     </main>

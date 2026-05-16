@@ -9,11 +9,13 @@ export default function Home() {
   const { user, profile, loading, signOut } = useAuth()
   const [numerisStreak, setNumerisStreak] = useState(0)
   const [lumisStreak, setLumisStreak] = useState(0)
+  const [verbaStreak, setVerbaStreak] = useState(0)
 
   useEffect(() => {
     if (!user) return
     getUserStreak(user.id, 'numeris').then(setNumerisStreak)
     getUserStreak(user.id, 'lumis').then(setLumisStreak)
+    getUserStreak(user.id, 'verba').then(setVerbaStreak)
   }, [user])
 
   return (
@@ -41,6 +43,16 @@ export default function Home() {
             {lumisStreak > 0 && <span className="text-sm text-[#aaa]">{lumisStreak}🔥</span>}
           </div>
           <span className="text-sm text-[#aaa]">Daily Memory Puzzle</span>
+        </Link>
+        <Link
+          href="/verba"
+          className="flex flex-col gap-1 p-6 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-serif text-2xl">Verba</span>
+            {verbaStreak > 0 && <span className="text-sm text-[#aaa]">{verbaStreak}🔥</span>}
+          </div>
+          <span className="text-sm text-[#aaa]">Daily Word Game</span>
         </Link>
         <Link
           href="/leaderboard"

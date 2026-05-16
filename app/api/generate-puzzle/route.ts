@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getTomorrowCT } from '@/lib/dates'
 import { generateNumeris } from '@/lib/puzzles/numeris'
 import { generateLumis } from '@/lib/puzzles/lumis'
+import { generateVerba } from '@/lib/puzzles/verba'
 
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization')
@@ -12,11 +13,14 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url)
   const puzzleDate = url.searchParams.get('date') ?? getTomorrowCT()
+  const gameFilter = url.searchParams.get('game')
 
-  const puzzles = [
+  const all = [
     { game: 'numeris', puzzle_data: generateNumeris() },
     { game: 'lumis',   puzzle_data: generateLumis() },
+    { game: 'verba',   puzzle_data: generateVerba() },
   ]
+  const puzzles = gameFilter ? all.filter(p => p.game === gameFilter) : all
 
   const { error } = await supabase
     .from('daily_puzzles')
