@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { DM_Serif_Display, DM_Mono, Outfit } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/next'
 import AuthProvider from '@/components/auth/AuthProvider'
 import './globals.css'
 
@@ -33,7 +34,7 @@ export default function RootLayout({
       lang="en"
       className={`${dmSerif.variable} ${dmMono.variable} ${outfit.variable}`}
     >
-      <body><AuthProvider>{children}</AuthProvider></body>
+      <body><AuthProvider>{children}</AuthProvider><Analytics /></body>
     </html>
   )
 }
