@@ -7,7 +7,7 @@ import {
   pointerWithin,
   type DragEndEvent, type DragStartEvent, type DragOverEvent,
 } from '@dnd-kit/core'
-import { useLumis, type LumisPuzzle, type CellPos, type PieceData } from './useLumis'
+import { useLumis, type LumisPuzzle, type CellPos, type PieceData, type PlacedPiece } from './useLumis'
 import { fmtTime } from '@/lib/format'
 import { getTodaysCT } from '@/lib/dates'
 import { supabase } from '@/lib/supabase'
@@ -115,9 +115,9 @@ export default function LumisBoard({ puzzle, puzzleId }: { puzzle: LumisPuzzle; 
   const [streak, setStreak] = useState(0)
 
   const {
-    lightsOn, elapsed, solved,
+    placed, lightsOn, elapsed, solved,
     bankPieces, occupiedGrid, targetSet,
-    canPlace, placePiece, returnPiece, onPickup, reset,
+    canPlace, placePiece, returnPiece, onPickup, reset, restorePlaced,
   } = useLumis(puzzle, { initialElapsed, paused: loadingScore || existingScore !== null })
 
   // Check for existing score
@@ -125,18 +125,19 @@ export default function LumisBoard({ puzzle, puzzleId }: { puzzle: LumisPuzzle; 
     if (!user || !puzzleId) return
     supabase
       .from('scores')
-      .select('time_seconds')
+      .select('time_seconds, solution')
       .eq('user_id', user.id)
       .eq('puzzle_id', puzzleId)
       .single()
       .then(({ data }) => {
         if (data) {
           setExistingScore(data.time_seconds)
-          if (user) getUserStreak(user.id, 'lumis').then(setStreak)
+          if (data.solution) restorePlaced(data.solution as PlacedPiece[])
+          getUserStreak(user.id, 'lumis').then(setStreak)
         }
         setLoadingScore(false)
       })
-  }, [user, puzzleId])
+  }, [user, puzzleId, restorePlaced])
 
   // Persist elapsed to localStorage
   useEffect(() => {
@@ -154,12 +155,12 @@ export default function LumisBoard({ puzzle, puzzleId }: { puzzle: LumisPuzzle; 
         user_id: user.id,
         puzzle_id: puzzleId,
         time_seconds: elapsed,
-        solution: null,
+        solution: placed,
       })
       const s = await getUserStreak(user.id, 'lumis')
       setStreak(s)
     })()
-  }, [solved, user, puzzleId, elapsed, loadingScore, existingScore, storageKey])
+  }, [solved, user, puzzleId, elapsed, placed, loadingScore, existingScore, storageKey])
 
   const [activeId, setActiveId] = useState<string | null>(null)
   const [hoveredCell, setHoveredCell] = useState<[number, number] | null>(null)

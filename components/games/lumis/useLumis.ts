@@ -80,9 +80,14 @@ export function useLumis(puzzle: LumisPuzzle, options?: { initialElapsed?: numbe
     setLightsOn(true)
   }, [])
 
+  const restorePlaced = useCallback((restored: PlacedPiece[]) => {
+    setPlaced(restored)
+    setLightsOn(false)
+  }, [])
+
   return {
     placed, lightsOn, elapsed, solved,
     bankPieces, occupiedGrid, targetSet,
-    canPlace, placePiece, returnPiece, onPickup, reset,
+    canPlace, placePiece, returnPiece, onPickup, reset, restorePlaced,
   }
 }
