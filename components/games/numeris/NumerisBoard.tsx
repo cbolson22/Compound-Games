@@ -330,23 +330,27 @@ export default function NumerisBoard({
           </div>
         </div>
 
-        <div className={styles.tilesLbl}>Your tiles</div>
-        <TrayArea>
-          {tiles.map((t) => (
-            <DraggableTrayTile
-              key={t.id}
-              tile={t}
-              isUsed={usedIndices.has(t.id)}
-              onClick={() => handleTileClick(t.id)}
-            />
-          ))}
-        </TrayArea>
+        {!solved && existingScore === null && (
+          <>
+            <div className={styles.tilesLbl}>Your tiles</div>
+            <TrayArea>
+              {tiles.map((t) => (
+                <DraggableTrayTile
+                  key={t.id}
+                  tile={t}
+                  isUsed={usedIndices.has(t.id)}
+                  onClick={() => handleTileClick(t.id)}
+                />
+              ))}
+            </TrayArea>
 
-        <div className={styles.controls}>
-          <button className={styles.btn} onClick={clearBoard}>
-            Clear
-          </button>
-        </div>
+            <div className={styles.controls}>
+              <button className={styles.btn} onClick={clearBoard}>
+                Clear
+              </button>
+            </div>
+          </>
+        )}
 
         {(solved || existingScore !== null) && (
           <div className={[styles.solvedBanner, styles.show].join(" ")}>

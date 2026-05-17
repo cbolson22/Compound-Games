@@ -260,71 +260,77 @@ export default function LumisBoard({ puzzle, puzzleId }: { puzzle: LumisPuzzle; 
           </div>
         </div>
 
-        <div className={styles.grid}>
-          {Array.from({ length: 7 }, (_, r) =>
-            Array.from({ length: 7 }, (_, c) => {
-              const key = `${r},${c}`
-              const pieceId = occupiedGrid[r][c]
-              const isPreview = preview?.cells.has(key) ?? false
-              return (
-                <GridCell
-                  key={key}
-                  r={r} c={c}
-                  pieceColor={pieceId ? colorMap[pieceId] : null}
-                  isTarget={targetSet.has(key)}
-                  lightsOn={lightsOn}
-                  previewColor={isPreview ? preview!.color : null}
-                  previewValid={preview?.valid ?? false}
-                  onReturn={pieceId && !solved && existingScore === null ? () => returnPiece(pieceId) : undefined}
-                  onTapPlace={selectedPieceId && !solved && existingScore === null ? () => handleTapPlace(r, c) : undefined}
-                />
-              )
-            })
-          )}
-        </div>
-
-        {!solved && existingScore === null && (
-          <div className={styles.hint}>
-            {lightsOn
-              ? 'Memorize the pattern, then drag or tap a piece to start.'
-              : selectedPieceId
-                ? 'Tap a cell to place the selected piece.'
-                : 'Tap a piece to select it, or drag to place.'}
-          </div>
-        )}
-
-        {existingScore === null && !solved && (
-          <div className={styles.bankWrap}>
-            <div className={styles.bankLbl}>Pieces</div>
-            <div className={styles.bank}>
-              {bankPieces.map(p => (
-                <BankPiece
-                  key={p.id}
-                  piece={p}
-                  color={colorMap[p.id]}
-                  selected={selectedPieceId === p.id}
-                  onSelect={() => handleTapSelect(p.id)}
-                />
-              ))}
-              {bankPieces.length === 0 && (
-                <span className={styles.bankEmpty}>All pieces placed</span>
+        <div className={styles.mainLayout}>
+          <div className={styles.leftCol}>
+            <div className={styles.grid}>
+              {Array.from({ length: 7 }, (_, r) =>
+                Array.from({ length: 7 }, (_, c) => {
+                  const key = `${r},${c}`
+                  const pieceId = occupiedGrid[r][c]
+                  const isPreview = preview?.cells.has(key) ?? false
+                  return (
+                    <GridCell
+                      key={key}
+                      r={r} c={c}
+                      pieceColor={pieceId ? colorMap[pieceId] : null}
+                      isTarget={targetSet.has(key)}
+                      lightsOn={lightsOn}
+                      previewColor={isPreview ? preview!.color : null}
+                      previewValid={preview?.valid ?? false}
+                      onReturn={pieceId && !solved && existingScore === null ? () => returnPiece(pieceId) : undefined}
+                      onTapPlace={selectedPieceId && !solved && existingScore === null ? () => handleTapPlace(r, c) : undefined}
+                    />
+                  )
+                })
               )}
             </div>
           </div>
-        )}
+
+          <div className={[styles.rightCol, (solved || existingScore !== null) ? styles.rightColSolved : ''].filter(Boolean).join(' ')}>
+            {existingScore === null && !solved && (
+              <div className={styles.bankWrap}>
+                <div className={styles.bankLbl}>Pieces</div>
+                <div className={styles.bank}>
+                  {bankPieces.map(p => (
+                    <BankPiece
+                      key={p.id}
+                      piece={p}
+                      color={colorMap[p.id]}
+                      selected={selectedPieceId === p.id}
+                      onSelect={() => handleTapSelect(p.id)}
+                    />
+                  ))}
+                  {bankPieces.length === 0 && (
+                    <span className={styles.bankEmpty}>All pieces placed</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!solved && existingScore === null && (
+              <div className={styles.hint}>
+                {lightsOn
+                  ? 'Memorize the pattern, then drag or tap a piece to start.'
+                  : selectedPieceId
+                    ? 'Tap a cell to place the selected piece.'
+                    : 'Tap a piece to select it, or drag to place.'}
+              </div>
+            )}
+
+            {(solved || existingScore !== null) && (
+              <div className={styles.solvedBanner}>
+                <div className={styles.solvedTxt}>Solved!</div>
+                <div className={styles.solvedSub}>Completed in {fmtTime(displayTime)}</div>
+                {streak > 0 && <div className={styles.solvedSub}>{streak}🔥</div>}
+              </div>
+            )}
+          </div>
+        </div>
 
         {!solved && existingScore === null && (
           <button className={styles.resetBtn} onClick={handleReset}>
             {lightsOn ? 'Reset' : 'Reset & Show Pattern'}
           </button>
-        )}
-
-        {(solved || existingScore !== null) && (
-          <div className={styles.solvedBanner}>
-            <div className={styles.solvedTxt}>Solved!</div>
-            <div className={styles.solvedSub}>Completed in {fmtTime(displayTime)}</div>
-            {streak > 0 && <div className={styles.solvedSub}>{streak}🔥</div>}
-          </div>
         )}
       </div>
 
