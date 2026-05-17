@@ -108,7 +108,24 @@ export default function LumisBoard({ puzzle, puzzleId }: { puzzle: LumisPuzzle; 
   const scoreSubmitted = useRef(false)
 
   const storageKey = puzzleId ? `lumis-${puzzleId}` : `lumis-${getTodaysCT()}`
-  const initialElapsed = parseInt(localStorage.getItem(storageKey) ?? '0', 10)
+
+  const [{ initialElapsed, initialPlaced }] = useState(() => {
+    try {
+      const raw = localStorage.getItem(storageKey)
+      if (!raw) return { initialElapsed: 0, initialPlaced: undefined as PlacedPiece[] | undefined }
+      const parsed = JSON.parse(raw)
+      if (typeof parsed === 'object' && parsed !== null) {
+        return {
+          initialElapsed: parsed.elapsed ?? 0,
+          initialPlaced: Array.isArray(parsed.placed) ? (parsed.placed as PlacedPiece[]) : undefined,
+        }
+      }
+      // Legacy: plain elapsed number
+      return { initialElapsed: parseInt(raw, 10) || 0, initialPlaced: undefined }
+    } catch {
+      return { initialElapsed: 0, initialPlaced: undefined }
+    }
+  })
 
   const [existingScore, setExistingScore] = useState<number | null>(null)
   const [loadingScore, setLoadingScore] = useState(!!puzzleId)
@@ -118,7 +135,7 @@ export default function LumisBoard({ puzzle, puzzleId }: { puzzle: LumisPuzzle; 
     placed, lightsOn, elapsed, solved,
     bankPieces, occupiedGrid, targetSet,
     canPlace, placePiece, returnPiece, onPickup, reset, restorePlaced,
-  } = useLumis(puzzle, { initialElapsed, paused: loadingScore || existingScore !== null })
+  } = useLumis(puzzle, { initialElapsed, paused: loadingScore || existingScore !== null, initialPlaced })
 
   // Check for existing score
   useEffect(() => {
@@ -139,11 +156,11 @@ export default function LumisBoard({ puzzle, puzzleId }: { puzzle: LumisPuzzle; 
       })
   }, [user, puzzleId, restorePlaced])
 
-  // Persist elapsed to localStorage
+  // Persist elapsed + placed to localStorage
   useEffect(() => {
     if (solved || existingScore !== null) return
-    localStorage.setItem(storageKey, String(elapsed))
-  }, [elapsed, storageKey, solved, existingScore])
+    localStorage.setItem(storageKey, JSON.stringify({ elapsed, placed }))
+  }, [elapsed, placed, storageKey, solved, existingScore])
 
   // Save score on solve
   useEffect(() => {

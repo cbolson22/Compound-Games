@@ -7,9 +7,9 @@ export type LumisPuzzle = { target: CellPos[]; pieces: PieceData[] }
 
 const GRID = 7
 
-export function useLumis(puzzle: LumisPuzzle, options?: { initialElapsed?: number; paused?: boolean }) {
-  const [placed, setPlaced] = useState<PlacedPiece[]>([])
-  const [lightsOn, setLightsOn] = useState(true)
+export function useLumis(puzzle: LumisPuzzle, options?: { initialElapsed?: number; paused?: boolean; initialPlaced?: PlacedPiece[] }) {
+  const [placed, setPlaced] = useState<PlacedPiece[]>(options?.initialPlaced ?? [])
+  const [lightsOn, setLightsOn] = useState(!options?.initialPlaced?.length)
   const [elapsed, setElapsed] = useState(options?.initialElapsed ?? 0)
 
   const bankPieces = useMemo(() => {

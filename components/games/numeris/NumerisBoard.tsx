@@ -131,9 +131,24 @@ export default function NumerisBoard({
   const [loadingScore, setLoadingScore] = useState(!!puzzleId);
   const [streak, setStreak] = useState(0);
 
-  const savedElapsed = puzzleId
-    ? parseInt(localStorage.getItem(`numeris-${puzzleId}`) || "0", 10)
-    : 0;
+  const [{ savedElapsed, savedSlots }] = useState(() => {
+    if (!puzzleId) return { savedElapsed: 0, savedSlots: undefined as (string | null)[] | undefined }
+    try {
+      const raw = localStorage.getItem(`numeris-${puzzleId}`)
+      if (!raw) return { savedElapsed: 0, savedSlots: undefined }
+      const parsed = JSON.parse(raw)
+      if (typeof parsed === 'object' && parsed !== null) {
+        const slots = Array.isArray(parsed.slots) && parsed.slots.length === puzzle.slots
+          ? (parsed.slots as (string | null)[])
+          : undefined
+        return { savedElapsed: parsed.elapsed ?? 0, savedSlots: slots }
+      }
+      // Legacy: plain elapsed number
+      return { savedElapsed: parseInt(raw, 10) || 0, savedSlots: undefined }
+    } catch {
+      return { savedElapsed: 0, savedSlots: undefined }
+    }
+  })
 
   const paused = loadingScore || existingScore !== null;
 
@@ -151,7 +166,7 @@ export default function NumerisBoard({
     returnSlot,
     clearBoard,
     resetBoard,
-  } = useNumeris(puzzle, { initialElapsed: savedElapsed, paused });
+  } = useNumeris(puzzle, { initialElapsed: savedElapsed, paused, initialSlots: savedSlots });
 
   useEffect(() => {
     if (!user || !puzzleId) return;
@@ -173,8 +188,8 @@ export default function NumerisBoard({
 
   useEffect(() => {
     if (!puzzleId || loadingScore || existingScore !== null) return;
-    localStorage.setItem(`numeris-${puzzleId}`, String(elapsed));
-  }, [elapsed, puzzleId, loadingScore, existingScore]);
+    localStorage.setItem(`numeris-${puzzleId}`, JSON.stringify({ elapsed, slots: slotContents }));
+  }, [elapsed, slotContents, puzzleId, loadingScore, existingScore]);
 
   useEffect(() => {
     if (

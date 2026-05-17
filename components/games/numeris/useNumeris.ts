@@ -60,7 +60,11 @@ function evalSlots(slotContents: (string | null)[]): number | null {
 
 export function useNumeris(
   puzzle: Puzzle,
-  { initialElapsed = 0, paused = false }: { initialElapsed?: number; paused?: boolean } = {}
+  { initialElapsed = 0, paused = false, initialSlots }: {
+    initialElapsed?: number
+    paused?: boolean
+    initialSlots?: (string | null)[]
+  } = {}
 ) {
   const tiles = useMemo<TileData[]>(
     () => puzzle.tiles.map((val, id) => ({ val, id })),
@@ -68,7 +72,7 @@ export function useNumeris(
   )
 
   const [slotContents, setSlotContents] = useState<(string | null)[]>(
-    () => Array(puzzle.slots).fill(null)
+    () => initialSlots ?? Array(puzzle.slots).fill(null)
   )
   const [elapsed, setElapsed] = useState(initialElapsed)
 
