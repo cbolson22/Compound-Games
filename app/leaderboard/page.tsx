@@ -47,17 +47,19 @@ async function getPointScores(game: string): Promise<PointScoreRow[]> {
 }
 
 export default async function LeaderboardPage() {
-  const [numerisScores, lumisScores, verbaScores] = await Promise.all([
+  const [numerisScores, lumisScores, verbaScores, aquarumScores] = await Promise.all([
     getTimeScores('numeris'),
     getTimeScores('lumis'),
     getPointScores('verba'),
+    getTimeScores('aquarum'),
   ]);
 
-  const allUserIds = [...new Set([...numerisScores, ...lumisScores, ...verbaScores].map(s => s.user_id))];
-  const [numerisStreaks, lumisStreaks, verbaStreaks] = await Promise.all([
+  const allUserIds = [...new Set([...numerisScores, ...lumisScores, ...verbaScores, ...aquarumScores].map(s => s.user_id))];
+  const [numerisStreaks, lumisStreaks, verbaStreaks, aquarumStreaks] = await Promise.all([
     getStreaksForUsers(allUserIds, 'numeris'),
     getStreaksForUsers(allUserIds, 'lumis'),
     getStreaksForUsers(allUserIds, 'verba'),
+    getStreaksForUsers(allUserIds, 'aquarum'),
   ]);
 
   return (
@@ -77,9 +79,11 @@ export default async function LeaderboardPage() {
         numerisScores={numerisScores}
         lumisScores={lumisScores}
         verbaScores={verbaScores}
+        aquarumScores={aquarumScores}
         numerisStreaks={numerisStreaks}
         lumisStreaks={lumisStreaks}
         verbaStreaks={verbaStreaks}
+        aquarumStreaks={aquarumStreaks}
       />
     </main>
   );

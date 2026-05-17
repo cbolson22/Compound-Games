@@ -12,7 +12,7 @@ async function fetchPlayedGames(userId: string): Promise<Set<string>> {
     .from('daily_puzzles')
     .select('id, game')
     .eq('puzzle_date', getTodaysCT())
-    .in('game', ['numeris', 'lumis', 'verba'])
+    .in('game', ['numeris', 'lumis', 'verba', 'aquarum'])
   if (!puzzles?.length) return new Set()
 
   const { data: scores } = await supabase
@@ -46,6 +46,7 @@ export default function Home() {
   const [numerisStreak, setNumerisStreak] = useState(0)
   const [lumisStreak, setLumisStreak]     = useState(0)
   const [verbaStreak, setVerbaStreak]     = useState(0)
+  const [aquarumStreak, setAquarumStreak] = useState(0)
   const [playedGames, setPlayedGames]     = useState<Set<string> | null>(null)
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function Home() {
     getUserStreak(user.id, 'numeris').then(setNumerisStreak)
     getUserStreak(user.id, 'lumis').then(setLumisStreak)
     getUserStreak(user.id, 'verba').then(setVerbaStreak)
+    getUserStreak(user.id, 'aquarum').then(setAquarumStreak)
     fetchPlayedGames(user.id).then(setPlayedGames)
   }, [user])
 
@@ -60,6 +62,7 @@ export default function Home() {
     { href: '/numeris', name: 'Numeris', desc: 'Daily Number Puzzle', streak: numerisStreak, key: 'numeris' },
     { href: '/lumis',   name: 'Lumis',   desc: 'Daily Memory Puzzle',  streak: lumisStreak,  key: 'lumis'   },
     { href: '/verba',   name: 'Verba',   desc: 'Daily Word Game',      streak: verbaStreak,  key: 'verba'   },
+    { href: '/aquarum', name: 'Aquarum', desc: 'Daily Pipe Puzzle',    streak: aquarumStreak, key: 'aquarum' },
   ]
 
   return (

@@ -11,12 +11,14 @@ export type LeaderboardData = {
   numerisScores:  TimeScoreRow[]
   lumisScores:    TimeScoreRow[]
   verbaScores:    PointScoreRow[]
+  aquarumScores:  TimeScoreRow[]
   numerisStreaks: Record<string, number>
   lumisStreaks:   Record<string, number>
   verbaStreaks:   Record<string, number>
+  aquarumStreaks: Record<string, number>
 }
 
-type Tab = 'numeris' | 'lumis' | 'verba'
+type Tab = 'numeris' | 'lumis' | 'verba' | 'aquarum'
 
 const MEDAL_BG     = ['#fffbeb', '#f8fafc', '#fef3e8']
 const MEDAL_BORDER = ['#d97706', '#94a3b8', '#b45309']
@@ -86,11 +88,12 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'numeris', label: 'Numeris' },
   { id: 'lumis',   label: 'Lumis'   },
   { id: 'verba',   label: 'Verba'   },
+  { id: 'aquarum', label: 'Aquarum' },
 ]
 
 export default function LeaderboardTabs({
-  numerisScores, lumisScores, verbaScores,
-  numerisStreaks, lumisStreaks, verbaStreaks,
+  numerisScores, lumisScores, verbaScores, aquarumScores,
+  numerisStreaks, lumisStreaks, verbaStreaks, aquarumStreaks,
 }: LeaderboardData) {
   const { user } = useAuth()
   const [tab, setTab] = useState<Tab>('numeris')
@@ -102,7 +105,7 @@ export default function LeaderboardTabs({
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${
               tab === t.id
                 ? 'bg-white text-[#1a1a1a] shadow-sm'
                 : 'text-[#999] hover:text-[#555]'
@@ -116,6 +119,7 @@ export default function LeaderboardTabs({
       {tab === 'numeris' && <TimeList  scores={numerisScores} streaks={numerisStreaks} userId={user?.id} />}
       {tab === 'lumis'   && <TimeList  scores={lumisScores}   streaks={lumisStreaks}   userId={user?.id} />}
       {tab === 'verba'   && <PointList scores={verbaScores}   streaks={verbaStreaks}   userId={user?.id} />}
+      {tab === 'aquarum' && <TimeList  scores={aquarumScores} streaks={aquarumStreaks} userId={user?.id} />}
     </div>
   )
 }

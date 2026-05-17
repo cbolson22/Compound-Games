@@ -4,6 +4,7 @@ import { getTomorrowCT } from '@/lib/dates'
 import { generateNumeris } from '@/lib/puzzles/numeris'
 import { generateLumis } from '@/lib/puzzles/lumis'
 import { generateVerba } from '@/lib/puzzles/verba'
+import { generateAquarum } from '@/lib/puzzles/aquarum'
 
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization')
@@ -19,6 +20,7 @@ export async function GET(request: Request) {
     { game: 'numeris', puzzle_data: generateNumeris() },
     { game: 'lumis',   puzzle_data: generateLumis() },
     { game: 'verba',   puzzle_data: generateVerba() },
+    { game: 'aquarum', puzzle_data: generateAquarum() },
   ]
   const puzzles = gameFilter ? all.filter(p => p.game === gameFilter) : all
 
