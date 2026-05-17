@@ -96,18 +96,12 @@
   color: #1a1a1a;
   transition: background 0.12s, border-color 0.12s, box-shadow 0.12s, color 0.12s;
   user-select: none;
+  position: relative;
 }
 
 .cellFilled {
   background: #fafafa;
   border-color: #d0d0d0;
-}
-
-.cellWord {
-  background: #d1fae5;
-  border-color: #34d399;
-  color: #065f46;
-  box-shadow: 0 0 8px #6ee7b7;
 }
 
 .hint {
@@ -169,6 +163,18 @@
   touch-action: none;
   transition: border-color 0.15s, transform 0.1s, box-shadow 0.1s;
   user-select: none;
+  position: relative;
+}
+
+.tileValue {
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-dm-mono), monospace;
+  opacity: 0.5;
+  line-height: 1;
 }
 
 .bankTile:hover {
@@ -184,6 +190,14 @@
   background: #f0f0f0;
   box-shadow: 0 0 0 2px #1a1a1a;
   transform: translateY(-2px);
+}
+
+.bankTileUsed {
+  background: #f5f5f5;
+  border-color: #e8e8e8;
+  color: #ccc;
+  cursor: default;
+  pointer-events: none;
 }
 
 .undoBtn {
@@ -272,10 +286,19 @@
 
 .solvedPts {
   font-family: var(--font-dm-mono), monospace;
-  font-size: 40px;
+  font-size: 48px;
   font-weight: 600;
   color: #1a1a1a;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
+  line-height: 1;
+}
+
+.solvedPtsLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #ccc;
+  font-weight: 500;
 }
 
 .solvedSub {

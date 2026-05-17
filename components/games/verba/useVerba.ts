@@ -6,7 +6,7 @@ import type { VerbaPuzzle } from '@/lib/puzzles/verba'
 export const MAX_COL_HEIGHT = 6
 export const GAME_DURATION = 60
 
-export type BankTile = { id: number; letter: string }
+type BankTile = { id: number; letter: string }
 export type DetectedWord = {
   word: string
   direction: 'h' | 'v'
@@ -18,15 +18,31 @@ export type DetectedWord = {
 // grid[colIdx] = letters from bottom (index 0) to top
 export type Grid = string[][]
 
-export function useVerba(puzzle: VerbaPuzzle) {
-  const [grid, setGrid] = useState<Grid>(() => Array.from({ length: puzzle.columns }, () => []))
-  const [bank, setBank] = useState<BankTile[]>(() =>
-    puzzle.letters.map((letter, i) => ({ id: i, letter }))
+export type VerbaSavedState = {
+  timeLeft: number
+  grid: Grid
+  history: { tileId: number; colIdx: number }[]
+}
+
+export function useVerba(puzzle: VerbaPuzzle, savedState?: VerbaSavedState) {
+  const [grid, setGrid] = useState<Grid>(() =>
+    savedState?.grid ?? Array.from({ length: puzzle.columns }, () => [])
   )
-  const [history, setHistory] = useState<{ tileId: number; colIdx: number }[]>([])
-  const [timeLeft, setTimeLeft] = useState(GAME_DURATION)
-  const [gameOver, setGameOver] = useState(false)
+  const [bank, setBank] = useState<BankTile[]>(() => {
+    const allTiles = puzzle.letters.map((letter, i) => ({ id: i, letter }))
+    if (!savedState?.history?.length) return allTiles
+    const placedIds = new Set(savedState.history.map(h => h.tileId))
+    return allTiles.filter(t => !placedIds.has(t.id))
+  })
+  const [history, setHistory] = useState<{ tileId: number; colIdx: number }[]>(
+    () => savedState?.history ?? []
+  )
+  const [timeLeft, setTimeLeft] = useState(() =>
+    savedState?.timeLeft && savedState.timeLeft > 0 ? savedState.timeLeft : GAME_DURATION
+  )
   const [wordSet, setWordSet] = useState<Set<string> | null>(null)
+
+  const gameOver = useMemo(() => timeLeft <= 0, [timeLeft])
 
   // Load word set once
   useEffect(() => {
@@ -36,7 +52,6 @@ export function useVerba(puzzle: VerbaPuzzle) {
   // Countdown timer
   useEffect(() => {
     if (gameOver) return
-    if (timeLeft <= 0) { setGameOver(true); return }
     const id = setTimeout(() => setTimeLeft(t => t - 1), 1000)
     return () => clearTimeout(id)
   }, [timeLeft, gameOver])
@@ -76,16 +91,16 @@ export function useVerba(puzzle: VerbaPuzzle) {
       flush()
     }
 
-    // Vertical: scan each column bottom-to-top
+    // Vertical: scan each column top-to-bottom
     for (let c = 0; c < puzzle.columns; c++) {
       const col = grid[c]
       if (col.length < 2) continue
-      const run = col.join('')
+      const run = [...col].reverse().join('')  // reverse so index 0 = top (highest data row)
       for (let s = 0; s < run.length; s++) {
         for (let e = s + 2; e <= run.length; e++) {
           const w = run.slice(s, e)
           if (isWord(w, wordSet!)) {
-            found.push({ word: w, direction: 'v', startCol: c, startRow: s, score: scoreWord(w) })
+            found.push({ word: w, direction: 'v', startCol: c, startRow: col.length - 1 - s, score: scoreWord(w) })
           }
         }
       }
@@ -93,12 +108,85 @@ export function useVerba(puzzle: VerbaPuzzle) {
 
     // Deduplicate by position + word
     const seen = new Set<string>()
-    return found.filter(w => {
+    const deduped = found.filter(w => {
       const key = `${w.direction}-${w.startCol}-${w.startRow}-${w.word}`
       if (seen.has(key)) return false
       seen.add(key)
       return true
     })
+
+    // Greedy overlap filter: sort longest-first, keep a word only if none of its cells
+    // are already claimed by a kept word in the same direction.
+    // H and V words can share cells freely (crossword-style).
+    const occupiedH = new Set<string>()
+    const occupiedV = new Set<string>()
+    const result: DetectedWord[] = []
+
+    const sorted = [...deduped].sort((a, b) => b.word.length - a.word.length || b.score - a.score)
+    for (const w of sorted) {
+      const cells: string[] = []
+      if (w.direction === 'h') {
+        for (let i = 0; i < w.word.length; i++) cells.push(`${w.startCol + i},${w.startRow}`)
+        if (cells.some(k => occupiedH.has(k))) continue
+        cells.forEach(k => occupiedH.add(k))
+      } else {
+        for (let i = 0; i < w.word.length; i++) cells.push(`${w.startCol},${w.startRow - i}`)
+        if (cells.some(k => occupiedV.has(k))) continue
+        cells.forEach(k => occupiedV.add(k))
+      }
+      result.push(w)
+    }
+
+    // Boundary check: a word is invalid if there is a placed letter immediately
+    // adjacent to it in the same direction (touching its start or end).
+    const bounded = result.filter(w => {
+      if (w.direction === 'h') {
+        const lc = w.startCol - 1
+        const rc = w.startCol + w.word.length
+        if (lc >= 0 && grid[lc].length > w.startRow) return false
+        if (rc < puzzle.columns && grid[rc].length > w.startRow) return false
+      } else {
+        if (w.startRow + 1 < grid[w.startCol].length) return false
+        if (w.startRow - w.word.length >= 0) return false
+      }
+      return true
+    })
+
+    // Extraneous letter validation: every placed letter must be part of a scored word.
+    // Loop until stable — removing a word can expose new uncovered letters.
+    let scored = bounded
+    let changed = true
+    while (changed) {
+      changed = false
+      const scoredCells = new Set<string>()
+      for (const w of scored) {
+        if (w.direction === 'h') {
+          for (let i = 0; i < w.word.length; i++) scoredCells.add(`${w.startCol + i},${w.startRow}`)
+        } else {
+          for (let i = 0; i < w.word.length; i++) scoredCells.add(`${w.startCol},${w.startRow - i}`)
+        }
+      }
+      const next = scored.filter(w => {
+        if (w.direction === 'h') {
+          for (let c = w.startCol; c < w.startCol + w.word.length; c++) {
+            for (let r = 0; r < grid[c].length; r++) {
+              if (r !== w.startRow && !scoredCells.has(`${c},${r}`)) return false
+            }
+          }
+        } else {
+          const bottom = w.startRow - w.word.length + 1
+          for (let r = 0; r < grid[w.startCol].length; r++) {
+            if ((r < bottom || r > w.startRow) && !scoredCells.has(`${w.startCol},${r}`)) return false
+          }
+        }
+        return true
+      })
+      if (next.length < scored.length) {
+        scored = next
+        changed = true
+      }
+    }
+    return scored
   }, [grid, wordSet, puzzle.columns])
 
   const totalScore = useMemo(
@@ -106,20 +194,20 @@ export function useVerba(puzzle: VerbaPuzzle) {
     [detectedWords]
   )
 
-  // Set of highlighted cell keys for quick lookup
+  // Map from cell key to word index for per-word color highlighting
   const highlightedCells = useMemo(() => {
-    const cells = new Set<string>()
-    for (const w of detectedWords) {
+    const cells = new Map<string, number>()
+    detectedWords.forEach((w, wordIdx) => {
       if (w.direction === 'h') {
         for (let i = 0; i < w.word.length; i++) {
-          cells.add(`${w.startCol + i},${w.startRow}`)
+          cells.set(`${w.startCol + i},${w.startRow}`, wordIdx)
         }
       } else {
         for (let i = 0; i < w.word.length; i++) {
-          cells.add(`${w.startCol},${w.startRow + i}`)
+          cells.set(`${w.startCol},${w.startRow - i}`, wordIdx)  // startRow = top, subtract to go downward
         }
       }
-    }
+    })
     return cells
   }, [detectedWords])
 
@@ -166,7 +254,7 @@ export function useVerba(puzzle: VerbaPuzzle) {
   }, [])
 
   return {
-    grid, bank, timeLeft, gameOver, wordSet,
+    grid, bank, history, timeLeft, gameOver,
     detectedWords, totalScore, highlightedCells,
     canPlace, placeTile, removeTopTile, undo, restoreGrid,
   }

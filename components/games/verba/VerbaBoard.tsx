@@ -1,36 +1,55 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
   useDraggable, useDroppable, useSensor, useSensors,
   pointerWithin,
   type DragEndEvent, type DragStartEvent,
 } from '@dnd-kit/core'
-import { useVerba, MAX_COL_HEIGHT, GAME_DURATION, type BankTile, type Grid } from './useVerba'
+import { useVerba, MAX_COL_HEIGHT, GAME_DURATION, type Grid, type VerbaSavedState } from './useVerba'
 import type { VerbaPuzzle } from '@/lib/puzzles/verba'
+import { LETTER_VALUES } from '@/lib/scoring'
 import { fmtTime } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { getUserStreak } from '@/lib/streaks'
 import styles from './verba.module.css'
 
-function DraggableTile({ tile, selected, onSelect }: {
-  tile: BankTile
+const WORD_COLORS = [
+  { bg: '#fef3c7', border: '#f59e0b', glow: '#fde68a', text: '#78350f' },
+  { bg: '#dbeafe', border: '#60a5fa', glow: '#bfdbfe', text: '#1e3a8a' },
+  { bg: '#f3e8ff', border: '#a855f7', glow: '#d8b4fe', text: '#581c87' },
+  { bg: '#ccfbf1', border: '#2dd4bf', glow: '#99f6e4', text: '#134e4a' },
+  { bg: '#ffe4e6', border: '#fb7185', glow: '#fecdd3', text: '#9f1239' },
+  { bg: '#ecfccb', border: '#86efac', glow: '#bbf7d0', text: '#14532d' },
+]
+
+function DraggableTile({ tileId, letter, available, selected, onSelect }: {
+  tileId: number
+  letter: string
+  available: boolean
   selected: boolean
   onSelect: () => void
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `tile-${tile.id}` })
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `tile-${tileId}`,
+    disabled: !available,
+  })
   return (
     <div
       ref={setNodeRef}
-      className={[styles.bankTile, selected ? styles.bankTileSelected : ''].filter(Boolean).join(' ')}
+      className={[
+        styles.bankTile,
+        !available ? styles.bankTileUsed : selected ? styles.bankTileSelected : '',
+      ].filter(Boolean).join(' ')}
       style={{ opacity: isDragging ? 0.3 : 1 }}
-      onClick={onSelect}
+      onClick={available ? onSelect : undefined}
       {...listeners}
       {...attributes}
     >
-      {tile.letter}
+      {letter}
+      <span className={styles.tileValue}>{LETTER_VALUES[letter] ?? 1}</span>
     </div>
   )
 }
@@ -38,7 +57,7 @@ function DraggableTile({ tile, selected, onSelect }: {
 function Column({ colIdx, letters, highlightedCells, canPlaceHere, onTap }: {
   colIdx: number
   letters: string[]
-  highlightedCells: Set<string>
+  highlightedCells: Map<string, number>
   canPlaceHere: boolean
   onTap: () => void
 }) {
@@ -53,17 +72,21 @@ function Column({ colIdx, letters, highlightedCells, canPlaceHere, onTap }: {
       {Array.from({ length: MAX_COL_HEIGHT }, (_, visualRow) => {
         const dataRow = MAX_COL_HEIGHT - 1 - visualRow
         const letter = letters[dataRow]
-        const isHighlighted = !!letter && highlightedCells.has(`${colIdx},${dataRow}`)
+        const wordIdx = letter ? highlightedCells.get(`${colIdx},${dataRow}`) : undefined
+        const color = wordIdx !== undefined ? WORD_COLORS[wordIdx % WORD_COLORS.length] : null
         return (
           <div
             key={visualRow}
-            className={[
-              styles.cell,
-              letter ? styles.cellFilled : '',
-              isHighlighted ? styles.cellWord : '',
-            ].filter(Boolean).join(' ')}
+            className={[styles.cell, letter ? styles.cellFilled : ''].filter(Boolean).join(' ')}
+            style={color ? {
+              background: color.bg,
+              borderColor: color.border,
+              color: color.text,
+              boxShadow: `0 0 10px ${color.glow}`,
+            } : {}}
           >
-            {letter ?? ''}
+            {letter}
+            {letter && <span className={styles.tileValue}>{LETTER_VALUES[letter] ?? 1}</span>}
           </div>
         )
       })}
@@ -79,18 +102,35 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
   const [loadingScore, setLoadingScore] = useState(!!puzzleId)
   const [streak, setStreak] = useState(0)
 
+  const storageKey = puzzleId ? `verba-${puzzleId}` : null
+
+  const [savedState] = useState<VerbaSavedState | undefined>(() => {
+    if (!storageKey) return undefined
+    try {
+      const raw = localStorage.getItem(storageKey)
+      return raw ? JSON.parse(raw) : undefined
+    } catch { return undefined }
+  })
+
   const {
-    grid, bank, timeLeft, gameOver,
+    grid, bank, history, timeLeft, gameOver,
     detectedWords, totalScore, highlightedCells,
     canPlace, placeTile, removeTopTile, undo, restoreGrid,
-  } = useVerba(puzzle)
+  } = useVerba(puzzle, savedState)
 
   const [selectedTileId, setSelectedTileId] = useState<number | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
 
+  // All original tiles (for gray placeholder display)
+  const allTiles = useMemo(
+    () => puzzle.letters.map((letter, i) => ({ id: i, letter })),
+    [puzzle]
+  )
+  const availableIds = useMemo(() => new Set(bank.map(t => t.id)), [bank])
+
   // Check for existing score and restore grid
   useEffect(() => {
-    if (!user || !puzzleId) { setLoadingScore(false); return }
+    if (!user || !puzzleId) { return }
     supabase
       .from('scores')
       .select('score, solution')
@@ -123,6 +163,13 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
       setStreak(s)
     })()
   }, [gameOver, user, puzzleId, totalScore, grid, loadingScore, existingScore])
+
+  // Persist in-progress state; clear when game ends or already completed
+  useEffect(() => {
+    if (!storageKey || existingScore !== null) return
+    if (gameOver) { localStorage.removeItem(storageKey); return }
+    localStorage.setItem(storageKey, JSON.stringify({ timeLeft, grid, history }))
+  }, [storageKey, timeLeft, grid, history, gameOver, existingScore])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -158,7 +205,8 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
     placeTile(tileId, colIdx)
   }, [placeTile])
 
-  const activeTile = activeId ? bank.find(t => t.id === parseInt(activeId.slice(5))) ?? null : null
+  const activeTileId = activeId ? parseInt(activeId.slice(5)) : null
+  const activeLetter = activeTileId !== null ? (allTiles.find(t => t.id === activeTileId)?.letter ?? null) : null
   const isLow = timeLeft <= 10 && !gameOver
   const played = gameOver || existingScore !== null
   const displayScore = existingScore ?? totalScore
@@ -205,19 +253,21 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
         {!played && (
           <div className={styles.hint}>
             {selectedTileId !== null
-              ? `Tap a column to place ${bank.find(t => t.id === selectedTileId)?.letter ?? ''}`
+              ? `Tap a column to place ${allTiles.find(t => t.id === selectedTileId)?.letter ?? ''}`
               : 'Tap a tile to select, or drag to a column'}
           </div>
         )}
 
-        {!played && bank.length > 0 && (
+        {!played && (
           <div className={styles.bankWrap}>
             <div className={styles.bankLbl}>Letters</div>
             <div className={styles.bank}>
-              {bank.map(tile => (
+              {allTiles.map(tile => (
                 <DraggableTile
                   key={tile.id}
-                  tile={tile}
+                  tileId={tile.id}
+                  letter={tile.letter}
+                  available={availableIds.has(tile.id)}
                   selected={selectedTileId === tile.id}
                   onSelect={() => handleTileSelect(tile.id)}
                 />
@@ -236,11 +286,18 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
           <div className={styles.wordList}>
             <div className={styles.wordListLbl}>Words Found</div>
             <div className={styles.words}>
-              {detectedWords.map((w, i) => (
-                <span key={i} className={styles.wordChip}>
-                  {w.word.toLowerCase()}&nbsp;<span className={styles.wordScore}>+{w.score}</span>
-                </span>
-              ))}
+              {detectedWords.map((w, i) => {
+                const color = WORD_COLORS[i % WORD_COLORS.length]
+                return (
+                  <span
+                    key={i}
+                    className={styles.wordChip}
+                    style={{ borderColor: color.border, background: color.bg, color: color.text }}
+                  >
+                    {w.word.toLowerCase()}&nbsp;<span className={styles.wordScore} style={{ color: color.border }}>+{w.score}</span>
+                  </span>
+                )
+              })}
             </div>
           </div>
         )}
@@ -248,14 +305,20 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
         {played && (
           <div className={styles.solvedBanner}>
             <div className={styles.solvedTxt}>{existingScore !== null ? 'Completed!' : "Time's Up!"}</div>
-            <div className={styles.solvedPts}>{displayScore} pts</div>
+            <div className={styles.solvedPts}>{displayScore}</div>
+            <div className={styles.solvedPtsLabel}>pts</div>
             {streak > 0 && <div className={styles.solvedSub}>{streak}🔥</div>}
           </div>
         )}
       </div>
 
       <DragOverlay dropAnimation={null}>
-        {activeTile ? <div className={styles.bankTile}>{activeTile.letter}</div> : null}
+        {activeLetter ? (
+          <div className={styles.bankTile}>
+            {activeLetter}
+            <span className={styles.tileValue}>{LETTER_VALUES[activeLetter] ?? 1}</span>
+          </div>
+        ) : null}
       </DragOverlay>
     </DndContext>
   )
