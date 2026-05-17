@@ -237,78 +237,84 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
           </div>
         )}
 
-        <div className={styles.grid} style={{ gridTemplateColumns: `repeat(${puzzle.columns}, 44px)` }}>
-          {Array.from({ length: puzzle.columns }, (_, colIdx) => (
-            <Column
-              key={colIdx}
-              colIdx={colIdx}
-              letters={grid[colIdx]}
-              highlightedCells={highlightedCells}
-              canPlaceHere={canPlace(colIdx)}
-              onTap={() => handleColumnTap(colIdx)}
-            />
-          ))}
-        </div>
-
-        {!played && (
-          <div className={styles.hint}>
-            {selectedTileId !== null
-              ? `Tap a column to place ${allTiles.find(t => t.id === selectedTileId)?.letter ?? ''}`
-              : 'Tap a tile to select, or drag to a column'}
-          </div>
-        )}
-
-        {!played && (
-          <div className={styles.bankWrap}>
-            <div className={styles.bankLbl}>Letters</div>
-            <div className={styles.bank}>
-              {allTiles.map(tile => (
-                <DraggableTile
-                  key={tile.id}
-                  tileId={tile.id}
-                  letter={tile.letter}
-                  available={availableIds.has(tile.id)}
-                  selected={selectedTileId === tile.id}
-                  onSelect={() => handleTileSelect(tile.id)}
+        <div className={styles.mainLayout}>
+          <div className={styles.leftCol}>
+            <div className={styles.grid} style={{ gridTemplateColumns: `repeat(${puzzle.columns}, 44px)` }}>
+              {Array.from({ length: puzzle.columns }, (_, colIdx) => (
+                <Column
+                  key={colIdx}
+                  colIdx={colIdx}
+                  letters={grid[colIdx]}
+                  highlightedCells={highlightedCells}
+                  canPlaceHere={canPlace(colIdx)}
+                  onTap={() => handleColumnTap(colIdx)}
                 />
               ))}
             </div>
           </div>
-        )}
+
+          <div className={styles.rightCol}>
+            {played && (
+              <div className={styles.solvedBanner}>
+                <div className={styles.solvedTxt}>{existingScore !== null ? 'Completed!' : "Time's Up!"}</div>
+                <div className={styles.solvedPts}>{displayScore}</div>
+                <div className={styles.solvedPtsLabel}>pts</div>
+                {streak > 0 && <div className={styles.solvedSub}>{streak}🔥</div>}
+              </div>
+            )}
+
+            {!played && (
+              <div className={styles.bankWrap}>
+                <div className={styles.bankLbl}>Letters</div>
+                <div className={styles.bank}>
+                  {allTiles.map(tile => (
+                    <DraggableTile
+                      key={tile.id}
+                      tileId={tile.id}
+                      letter={tile.letter}
+                      available={availableIds.has(tile.id)}
+                      selected={selectedTileId === tile.id}
+                      onSelect={() => handleTileSelect(tile.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {detectedWords.length > 0 && (
+              <div className={styles.wordList}>
+                <div className={styles.wordListLbl}>Words Found</div>
+                <div className={styles.words}>
+                  {detectedWords.map((w, i) => {
+                    const color = WORD_COLORS[i % WORD_COLORS.length]
+                    return (
+                      <span
+                        key={i}
+                        className={styles.wordChip}
+                        style={{ borderColor: color.border, background: color.bg, color: color.text }}
+                      >
+                        {w.word.toLowerCase()}&nbsp;<span className={styles.wordScore} style={{ color: color.border }}>+{w.score}</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {!played && (
+              <div className={styles.hint}>
+                {selectedTileId !== null
+                  ? `Tap a column to place ${allTiles.find(t => t.id === selectedTileId)?.letter ?? ''}`
+                  : 'Tap a tile to select, or drag to a column'}
+              </div>
+            )}
+          </div>
+        </div>
 
         {!played && (
           <button className={styles.undoBtn} onClick={undo}>
             ↩ Undo
           </button>
-        )}
-
-        {detectedWords.length > 0 && (
-          <div className={styles.wordList}>
-            <div className={styles.wordListLbl}>Words Found</div>
-            <div className={styles.words}>
-              {detectedWords.map((w, i) => {
-                const color = WORD_COLORS[i % WORD_COLORS.length]
-                return (
-                  <span
-                    key={i}
-                    className={styles.wordChip}
-                    style={{ borderColor: color.border, background: color.bg, color: color.text }}
-                  >
-                    {w.word.toLowerCase()}&nbsp;<span className={styles.wordScore} style={{ color: color.border }}>+{w.score}</span>
-                  </span>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {played && (
-          <div className={styles.solvedBanner}>
-            <div className={styles.solvedTxt}>{existingScore !== null ? 'Completed!' : "Time's Up!"}</div>
-            <div className={styles.solvedPts}>{displayScore}</div>
-            <div className={styles.solvedPtsLabel}>pts</div>
-            {streak > 0 && <div className={styles.solvedSub}>{streak}🔥</div>}
-          </div>
         )}
       </div>
 

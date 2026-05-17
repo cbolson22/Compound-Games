@@ -2,7 +2,29 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1rem 3rem;
+  padding: 1.5rem 1rem 2rem;
+}
+
+.mainLayout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 0;
+}
+
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 340px;
 }
 
 .title {
@@ -274,7 +296,7 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  margin-top: 1.2rem;
+  margin-top: 0;
   animation: fadeUp 0.4s ease;
 }
 
@@ -310,4 +332,44 @@
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (min-width: 720px) {
+  .board {
+    padding: 1.5rem 2.5rem 2rem;
+  }
+
+  .mainLayout {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .rightCol {
+    align-items: center;
+    width: 300px;
+    max-width: none;
+    flex-shrink: 0;
+  }
+
+  .bankWrap {
+    max-width: none;
+    width: 100%;
+  }
+
+  .wordList {
+    max-width: none;
+    width: 100%;
+  }
+
+  .hint {
+    text-align: center;
+    max-width: none;
+  }
+
+  .grid {
+    margin-bottom: 0;
+  }
 }
