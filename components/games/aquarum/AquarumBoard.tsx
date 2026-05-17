@@ -73,7 +73,7 @@ export default function AquarumBoard({
 
   const paused = loadingScore || existingScore !== null
 
-  const { rotations, elapsed, solved, rotateCell, reset, restoreRotations } = useAquarum(puzzle, {
+  const { rotations, elapsed, solved, solvedCells, rotateCell, reset, restoreRotations } = useAquarum(puzzle, {
     initialElapsed: savedElapsed,
     paused,
     savedRotations,
@@ -141,60 +141,54 @@ export default function AquarumBoard({
         </div>
       </div>
 
-      <div className={styles.mainLayout}>
-        <div className={styles.leftCol}>
-          <div className={styles.grid}>
-            {puzzle.grid.map((row, r) =>
-              row.map((cell, c) => {
-                const color =
-                  cell.type === 'empty'
-                    ? 'transparent'
-                    : isDone || cell.fixed
-                      ? puzzle.colors[cell.colorId]
-                      : '#9ca3af'
+      <div className={styles.grid}>
+        {puzzle.grid.map((row, r) =>
+          row.map((cell, c) => {
+            const color =
+              cell.type === 'empty'
+                ? 'transparent'
+                : isDone || cell.fixed || solvedCells.has(`${r},${c}`)
+                  ? puzzle.colors[cell.colorId]
+                  : '#9ca3af'
 
-                const canClick =
-                  !cell.fixed && cell.type !== 'empty' && !solved && existingScore === null
+            const canClick =
+              !cell.fixed && cell.type !== 'empty' && !solved && existingScore === null
 
-                return (
-                  <div
-                    key={`${r},${c}`}
-                    className={[
-                      styles.cell,
-                      cell.type !== 'empty' ? styles.pipedCell : '',
-                      cell.fixed ? styles.fixedCell : '',
-                      canClick ? styles.clickable : '',
-                    ].filter(Boolean).join(' ')}
-                    onClick={canClick ? () => rotateCell(r, c) : undefined}
-                  >
-                    {cell.type !== 'empty' && (
-                      <PipeSvg cell={cell} rotation={rotations[r][c]} color={color} />
-                    )}
-                  </div>
-                )
-              })
-            )}
-          </div>
-        </div>
-
-        <div className={[styles.rightCol, isDone ? styles.rightColSolved : ''].filter(Boolean).join(' ')}>
-          {isDone && (
-            <div className={styles.solvedBanner}>
-              <div className={styles.solvedTxt}>Solved!</div>
-              <div className={styles.solvedSub}>Completed in {fmtTime(displayTime)}</div>
-              {streak > 0 && <div className={styles.solvedSub}>{streak}🔥</div>}
-            </div>
-          )}
-          {!isDone && (
-            <div className={styles.hint}>
-              Click the gray pipes to rotate them and connect each path.
-            </div>
-          )}
-        </div>
+            return (
+              <div
+                key={`${r},${c}`}
+                className={[
+                  styles.cell,
+                  cell.type !== 'empty' ? styles.pipedCell : '',
+                  cell.fixed ? styles.fixedCell : '',
+                  canClick ? styles.clickable : '',
+                ].filter(Boolean).join(' ')}
+                onClick={canClick ? () => rotateCell(r, c) : undefined}
+              >
+                {cell.type !== 'empty' && (
+                  <PipeSvg cell={cell} rotation={rotations[r][c]} color={color} />
+                )}
+              </div>
+            )
+          })
+        )}
       </div>
 
       {!isDone && (
-        <button className={styles.resetBtn} onClick={reset}>Reset</button>
+        <>
+          <div className={styles.hint}>
+            Click the gray pipes to rotate them and connect each path.
+          </div>
+          <button className={styles.resetBtn} onClick={reset}>Reset</button>
+        </>
+      )}
+
+      {isDone && (
+        <div className={styles.solvedBanner}>
+          <div className={styles.solvedTxt}>Solved!</div>
+          <div className={styles.solvedSub}>Completed in {fmtTime(displayTime)}</div>
+          {streak > 0 && <div className={styles.solvedSub}>{streak}🔥</div>}
+        </div>
       )}
     </div>
   )

@@ -33,7 +33,10 @@ export function getOpenSides(type: PipeType, rotation: number): Dir[] {
   return BASE_OPEN[type].map(d => ((d + rotation) % 4) as Dir)
 }
 
-function checkSolved(puzzle: AquarumPuzzle, rotations: number[][]): boolean {
+function computeSolveState(puzzle: AquarumPuzzle, rotations: number[][]): {
+  solved: boolean
+  solvedCells: Set<string>
+} {
   const { size, grid } = puzzle
 
   const sources: { r: number; c: number; colorId: number }[] = []
@@ -41,48 +44,48 @@ function checkSolved(puzzle: AquarumPuzzle, rotations: number[][]): boolean {
     for (let c = 0; c < size; c++)
       if (grid[r][c].isSource) sources.push({ r, c, colorId: grid[r][c].colorId })
 
-  if (sources.length === 0) return false
+  if (!sources.length) return { solved: false, solvedCells: new Set() }
 
-  const visited = new Set<string>()
+  const solvedCells = new Set<string>()
 
   for (const src of sources) {
     const queue: [number, number][] = [[src.r, src.c]]
     const component = new Set([`${src.r},${src.c}`])
+    let valid = true
     let foundSink = false
 
+    bfs:
     while (queue.length > 0) {
       const [r, c] = queue.shift()!
       const cell = grid[r][c]
 
       if (cell.isSink && !(r === src.r && c === src.c)) {
-        if (cell.colorId !== src.colorId) return false
+        if (cell.colorId !== src.colorId) { valid = false; break }
         foundSink = true
         continue
       }
 
       for (const d of getOpenSides(cell.type, rotations[r][c])) {
         const nr = r + DR[d], nc = c + DC[d]
-        if (nr < 0 || nr >= size || nc < 0 || nc >= size) return false
+        if (nr < 0 || nr >= size || nc < 0 || nc >= size) { valid = false; break bfs }
         const nKey = `${nr},${nc}`
         if (component.has(nKey)) continue
-
-        const neighbor = grid[nr][nc]
-        if (!getOpenSides(neighbor.type, rotations[nr][nc]).includes(OPP[d])) return false
-
+        if (!getOpenSides(grid[nr][nc].type, rotations[nr][nc]).includes(OPP[d])) { valid = false; break bfs }
         component.add(nKey)
         queue.push([nr, nc])
       }
     }
 
-    if (!foundSink) return false
-    component.forEach(k => visited.add(k))
+    if (valid && foundSink) component.forEach(k => solvedCells.add(k))
   }
 
-  for (let r = 0; r < puzzle.size; r++)
-    for (let c = 0; c < puzzle.size; c++)
-      if (grid[r][c].type !== 'empty' && !visited.has(`${r},${c}`)) return false
+  let solved = true
+  outer:
+  for (let r = 0; r < size; r++)
+    for (let c = 0; c < size; c++)
+      if (grid[r][c].type !== 'empty' && !solvedCells.has(`${r},${c}`)) { solved = false; break outer }
 
-  return true
+  return { solved, solvedCells }
 }
 
 function initRotations(grid: PipeCell[][]): number[][] {
@@ -105,7 +108,7 @@ export function useAquarum(
   )
   const [elapsed, setElapsed] = useState(options?.initialElapsed ?? 0)
 
-  const solved = useMemo(() => checkSolved(puzzle, rotations), [puzzle, rotations])
+  const { solved, solvedCells } = useMemo(() => computeSolveState(puzzle, rotations), [puzzle, rotations])
 
   useEffect(() => {
     if (solved || paused) return
@@ -131,5 +134,5 @@ export function useAquarum(
     setRotations(saved)
   }, [])
 
-  return { rotations, elapsed, solved, rotateCell, reset, restoreRotations }
+  return { rotations, elapsed, solved, solvedCells, rotateCell, reset, restoreRotations }
 }
