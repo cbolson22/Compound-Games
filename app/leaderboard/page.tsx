@@ -64,8 +64,8 @@ export default async function LeaderboardPage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center p-8">
-      <nav className="w-full max-w-sm mb-6">
-        <Link href="/" className="text-sm text-[#bbb] hover:text-[#1a1a1a] transition-colors">
+      <nav className="px-5 pt-5 w-full">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#555] border border-[#e8e8e8] rounded-full px-4 py-1.5 bg-white hover:border-[#bbb] hover:text-[#1a1a1a] transition-all">
           ← Home
         </Link>
       </nav>

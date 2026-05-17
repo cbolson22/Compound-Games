@@ -68,7 +68,7 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8">
       <h1 className="font-serif text-5xl mb-2">Compound Games</h1>
-      <p className="text-xs uppercase tracking-widest text-[#ccc] mb-12">Daily Puzzles</p>
+      <p className="text-xs uppercase tracking-widest text-[#ccc] mb-6">Daily Puzzles</p>
 
       <div className="flex flex-col gap-4 w-full max-w-sm">
         {games.map(g => (
@@ -99,7 +99,7 @@ export default function Home() {
         </Link>
       </div>
 
-      <div className="mt-12 text-sm text-[#aaa]">
+      <div className="mt-6 text-sm text-[#aaa]">
         {!loading && (
           user ? (
             <div className="flex items-center gap-4">
