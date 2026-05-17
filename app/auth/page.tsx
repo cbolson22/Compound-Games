@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth/AuthProvider'
 
-type Mode = 'signin' | 'signup'
+type Mode = 'signin' | 'signup' | 'forgot'
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
 
@@ -31,6 +31,16 @@ export default function AuthPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+
+    if (mode === 'forgot') {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset`,
+      })
+      setLoading(false)
+      if (resetError) { setError(resetError.message); return }
+      setError('__sent__')
+      return
+    }
 
     if (mode === 'signup') {
       if (!USERNAME_RE.test(username)) {
@@ -73,55 +83,68 @@ export default function AuthPage() {
         Compound Games
       </Link>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full max-w-xs">
-        {mode === 'signup' && (
+      {mode === 'forgot' && error === '__sent__' ? (
+        <p className="text-sm text-[#1d9e75] text-center max-w-xs">
+          Check your email for a reset link.
+        </p>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full max-w-xs">
+          {mode === 'signup' && (
+            <input
+              type="text"
+              value={username}
+              onChange={e => { setUsername(e.target.value); setError('') }}
+              placeholder="username"
+              required
+              className={inputClass}
+            />
+          )}
           <input
-            type="text"
-            value={username}
-            onChange={e => { setUsername(e.target.value); setError('') }}
-            placeholder="username"
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="email"
             required
             className={inputClass}
           />
-        )}
-        <input
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="email"
-          required
-          className={inputClass}
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          placeholder="password"
-          required
-          minLength={6}
-          className={inputClass}
-        />
-        {error && <p className="text-xs text-[#e24b4a]">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-3 bg-[#1a1a1a] text-white rounded-xl text-sm font-medium hover:bg-[#333] transition-colors disabled:opacity-50"
-        >
-          {loading ? '…' : mode === 'signin' ? 'Sign in' : 'Create account'}
-        </button>
-      </form>
+          {mode !== 'forgot' && (
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="password"
+              required
+              minLength={6}
+              className={inputClass}
+            />
+          )}
+          {error && error !== '__sent__' && <p className="text-xs text-[#e24b4a]">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-4 py-3 bg-[#1a1a1a] text-white rounded-xl text-sm font-medium hover:bg-[#333] transition-colors disabled:opacity-50"
+          >
+            {loading ? '…' : mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send reset email'}
+          </button>
+        </form>
+      )}
 
       <p className="mt-6 text-sm text-[#aaa]">
         {mode === 'signin' ? (
-          <>No account?{' '}
-            <button onClick={() => switchMode('signup')} className="text-[#1a1a1a] hover:underline">
-              Sign up
+          <span className="flex flex-col items-center gap-2">
+            <span>No account?{' '}
+              <button onClick={() => switchMode('signup')} className="text-[#1a1a1a] hover:underline">
+                Sign up
+              </button>
+            </span>
+            <button onClick={() => switchMode('forgot')} className="hover:underline">
+              Forgot password?
             </button>
-          </>
+          </span>
         ) : (
-          <>Have an account?{' '}
+          <>
             <button onClick={() => switchMode('signin')} className="text-[#1a1a1a] hover:underline">
-              Sign in
+              Back to sign in
             </button>
           </>
         )}
