@@ -84,6 +84,10 @@
   max-width: 600px;
 }
 
+/* On desktop both divs are invisible to the flex layout — slots and = result flow in one row */
+.slotsRow  { display: contents; }
+.eqSuffix  { display: contents; }
+
 .slot {
   width: 52px;
   height: 58px;
@@ -244,4 +248,37 @@
 @keyframes fiu {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 480px) {
+  .eqArea {
+    flex-direction: column;
+    min-height: auto;
+    padding: 0;
+    gap: 10px;
+  }
+
+  .slotsRow {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: 100%;
+  }
+
+  .eqSuffix {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Slots grow to fill the row evenly regardless of count (up to 8) */
+  .slot {
+    flex: 1;
+    min-width: 0;
+    height: 50px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
 }

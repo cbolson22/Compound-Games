@@ -311,18 +311,22 @@ export default function NumerisBoard({
         </div>
 
         <div className={styles.eqArea}>
-          {slotContents.map((val, si) => (
-            <SlotCell
-              key={si}
-              slotIndex={si}
-              val={val}
-              solved={solved}
-              onReturn={() => returnSlot(si)}
-            />
-          ))}
-          <div className={styles.eqSep}>=</div>
-          <div className={resultClass}>
-            {currentResult === null ? "?" : currentResult}
+          <div className={styles.slotsRow}>
+            {slotContents.map((val, si) => (
+              <SlotCell
+                key={si}
+                slotIndex={si}
+                val={val}
+                solved={solved}
+                onReturn={() => returnSlot(si)}
+              />
+            ))}
+          </div>
+          <div className={styles.eqSuffix}>
+            <div className={styles.eqSep}>=</div>
+            <div className={resultClass}>
+              {currentResult === null ? "?" : currentResult}
+            </div>
           </div>
         </div>
 
