@@ -26,45 +26,23 @@ function computeStreakAtDate(allDates: string[], targetDate: string): number {
   return streak
 }
 
-type AwardResult = {
-  game: Game
-  puzzleFound: boolean
-  scoresFound: number
-  medalsInserted: number
-  error?: string
-}
-
-export async function awardMedalsForDate(date: string): Promise<AwardResult[]> {
-  const results: AwardResult[] = []
-
+export async function awardMedalsForDate(date: string): Promise<void> {
   for (const game of GAMES) {
-    const result: AwardResult = { game, puzzleFound: false, scoresFound: 0, medalsInserted: 0 }
-
-    const { data: puzzle, error: puzzleError } = await supabase
+    const { data: puzzle } = await supabase
       .from('daily_puzzles')
       .select('id')
       .eq('game', game)
       .eq('puzzle_date', date)
       .single()
 
-    if (puzzleError || !puzzle) {
-      result.error = puzzleError?.message ?? 'puzzle not found'
-      results.push(result)
-      continue
-    }
-    result.puzzleFound = true
+    if (!puzzle) continue
 
-    const { data: scores, error: scoresError } = await supabase
+    const { data: scores } = await supabase
       .from('scores')
-      .select('user_id, time_seconds, score, created_at')
+      .select('user_id, time_seconds, score, completed_at')
       .eq('puzzle_id', puzzle.id)
 
-    if (scoresError || !scores || scores.length === 0) {
-      result.error = scoresError?.message ?? 'no scores'
-      results.push(result)
-      continue
-    }
-    result.scoresFound = scores.length
+    if (!scores || scores.length === 0) continue
 
     const userIds = scores.map(s => s.user_id)
 
@@ -95,7 +73,7 @@ export async function awardMedalsForDate(date: string): Promise<AwardResult[]> {
       if (primary !== 0) return primary
       const streakDiff = (streakAt[b.user_id] ?? 0) - (streakAt[a.user_id] ?? 0)
       if (streakDiff !== 0) return streakDiff
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      return new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime()
     })
 
     const medalTypes: MedalType[] = ['gold', 'silver', 'bronze']
@@ -107,18 +85,10 @@ export async function awardMedalsForDate(date: string): Promise<AwardResult[]> {
     }))
 
     await supabase.from('medals').delete().eq('game', game).eq('puzzle_date', date)
-
-    const { error: insertError } = await supabase.from('medals').insert(medals)
-    if (insertError) {
-      result.error = insertError.message
-    } else {
-      result.medalsInserted = medals.length
+    if (medals.length > 0) {
+      await supabase.from('medals').insert(medals)
     }
-
-    results.push(result)
   }
-
-  return results
 }
 
 export async function getMedalCounts(userId: string): Promise<AllMedalCounts> {

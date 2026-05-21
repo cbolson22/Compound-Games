@@ -23,11 +23,10 @@ export async function GET(request: Request) {
       .select('puzzle_date')
       .lt('puzzle_date', today)
     const dates = [...new Set((rows ?? []).map(r => r.puzzle_date))].sort()
-    const details: Record<string, Awaited<ReturnType<typeof awardMedalsForDate>>> = {}
     for (const date of dates) {
-      details[date] = await awardMedalsForDate(date)
+      await awardMedalsForDate(date)
     }
-    return NextResponse.json({ backfilled: dates.length, dates, details })
+    return NextResponse.json({ backfilled: dates.length, dates })
   }
 
   const puzzleDate = url.searchParams.get('date') ?? getTomorrowCT()
