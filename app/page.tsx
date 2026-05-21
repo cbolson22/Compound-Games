@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { getUserStreak } from '@/lib/streaks'
+import { getMedalCounts, type AllMedalCounts } from '@/lib/medals'
 import { supabase } from '@/lib/supabase'
 import { getTodaysCT } from '@/lib/dates'
 
@@ -41,6 +42,14 @@ function StatusBadge({ played }: { played: boolean }) {
   )
 }
 
+function MedalRow({ counts }: { counts: { gold: number; silver: number; bronze: number } }) {
+  return (
+    <span className="text-sm text-[#aaa]">
+      {counts.gold}🥇 {counts.silver}🥈 {counts.bronze}🥉
+    </span>
+  )
+}
+
 export default function Home() {
   const { user, profile, loading, signOut } = useAuth()
   const [numerisStreak, setNumerisStreak] = useState(0)
@@ -48,6 +57,7 @@ export default function Home() {
   const [verbaStreak, setVerbaStreak]     = useState(0)
   const [aquarumStreak, setAquarumStreak] = useState(0)
   const [playedGames, setPlayedGames]     = useState<Set<string> | null>(null)
+  const [medals, setMedals]               = useState<AllMedalCounts | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -56,6 +66,7 @@ export default function Home() {
     getUserStreak(user.id, 'verba').then(setVerbaStreak)
     getUserStreak(user.id, 'aquarum').then(setAquarumStreak)
     fetchPlayedGames(user.id).then(setPlayedGames)
+    getMedalCounts(user.id).then(setMedals)
   }, [user])
 
   const games = [
@@ -85,6 +96,9 @@ export default function Home() {
               <div className="flex flex-col items-end gap-1 shrink-0">
                 <StatusBadge played={playedGames.has(g.key)} />
                 {g.streak > 0 && <span className="text-sm text-[#aaa]">{g.streak}🔥</span>}
+                {medals !== null && (
+                  <MedalRow counts={medals[g.key as keyof AllMedalCounts] ?? { gold: 0, silver: 0, bronze: 0 }} />
+                )}
               </div>
             )}
           </Link>

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getTomorrowCT } from '@/lib/dates'
+import { getTodaysCT, getTomorrowCT, getYesterdayCT } from '@/lib/dates'
 import { generateNumeris } from '@/lib/puzzles/numeris'
 import { generateLumis } from '@/lib/puzzles/lumis'
 import { generateVerba } from '@/lib/puzzles/verba'
 import { generateAquarum } from '@/lib/puzzles/aquarum'
+import { awardMedalsForDate } from '@/lib/medals'
 
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization')
@@ -13,6 +14,21 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url)
+
+  // One-time backfill: award medals for all past puzzle dates
+  if (url.searchParams.get('backfill') === 'true') {
+    const today = getTodaysCT()
+    const { data: rows } = await supabase
+      .from('daily_puzzles')
+      .select('puzzle_date')
+      .lt('puzzle_date', today)
+    const dates = [...new Set((rows ?? []).map(r => r.puzzle_date))].sort()
+    for (const date of dates) {
+      await awardMedalsForDate(date)
+    }
+    return NextResponse.json({ backfilled: dates.length, dates })
+  }
+
   const puzzleDate = url.searchParams.get('date') ?? getTomorrowCT()
   const gameFilter = url.searchParams.get('game')
 
@@ -32,6 +48,9 @@ export async function GET(request: Request) {
     )
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Award medals for yesterday's (now closed) puzzles
+  await awardMedalsForDate(getYesterdayCT())
 
   return NextResponse.json({ date: puzzleDate, puzzles })
 }
