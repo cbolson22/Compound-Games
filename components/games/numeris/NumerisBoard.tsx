@@ -132,23 +132,28 @@ export default function NumerisBoard({
   const [streak, setStreak] = useState(0);
 
   const [{ savedElapsed, savedSlots }] = useState(() => {
-    if (!puzzleId) return { savedElapsed: 0, savedSlots: undefined as (string | null)[] | undefined }
+    if (!puzzleId)
+      return {
+        savedElapsed: 0,
+        savedSlots: undefined as (string | null)[] | undefined,
+      };
     try {
-      const raw = localStorage.getItem(`numeris-${puzzleId}`)
-      if (!raw) return { savedElapsed: 0, savedSlots: undefined }
-      const parsed = JSON.parse(raw)
-      if (typeof parsed === 'object' && parsed !== null) {
-        const slots = Array.isArray(parsed.slots) && parsed.slots.length === puzzle.slots
-          ? (parsed.slots as (string | null)[])
-          : undefined
-        return { savedElapsed: parsed.elapsed ?? 0, savedSlots: slots }
+      const raw = localStorage.getItem(`numeris-${puzzleId}`);
+      if (!raw) return { savedElapsed: 0, savedSlots: undefined };
+      const parsed = JSON.parse(raw);
+      if (typeof parsed === "object" && parsed !== null) {
+        const slots =
+          Array.isArray(parsed.slots) && parsed.slots.length === puzzle.slots
+            ? (parsed.slots as (string | null)[])
+            : undefined;
+        return { savedElapsed: parsed.elapsed ?? 0, savedSlots: slots };
       }
       // Legacy: plain elapsed number
-      return { savedElapsed: parseInt(raw, 10) || 0, savedSlots: undefined }
+      return { savedElapsed: parseInt(raw, 10) || 0, savedSlots: undefined };
     } catch {
-      return { savedElapsed: 0, savedSlots: undefined }
+      return { savedElapsed: 0, savedSlots: undefined };
     }
-  })
+  });
 
   const paused = loadingScore || existingScore !== null;
 
@@ -166,7 +171,11 @@ export default function NumerisBoard({
     returnSlot,
     clearBoard,
     resetBoard,
-  } = useNumeris(puzzle, { initialElapsed: savedElapsed, paused, initialSlots: savedSlots });
+  } = useNumeris(puzzle, {
+    initialElapsed: savedElapsed,
+    paused,
+    initialSlots: savedSlots,
+  });
 
   useEffect(() => {
     if (!user || !puzzleId) return;
@@ -180,7 +189,7 @@ export default function NumerisBoard({
         if (data) {
           setExistingScore(data.time_seconds);
           if (data.solution) resetBoard(data.solution as (string | null)[]);
-          if (user) getUserStreak(user.id, 'numeris').then(setStreak)
+          if (user) getUserStreak(user.id, "numeris").then(setStreak);
         }
         setLoadingScore(false);
       });
@@ -188,7 +197,10 @@ export default function NumerisBoard({
 
   useEffect(() => {
     if (!puzzleId || loadingScore || existingScore !== null) return;
-    localStorage.setItem(`numeris-${puzzleId}`, JSON.stringify({ elapsed, slots: slotContents }));
+    localStorage.setItem(
+      `numeris-${puzzleId}`,
+      JSON.stringify({ elapsed, slots: slotContents }),
+    );
   }, [elapsed, slotContents, puzzleId, loadingScore, existingScore]);
 
   useEffect(() => {
@@ -203,15 +215,15 @@ export default function NumerisBoard({
       return;
     scoreSubmitted.current = true;
     localStorage.removeItem(`numeris-${puzzleId}`);
-    ;(async () => {
+    (async () => {
       await supabase.from("scores").insert({
         user_id: user.id,
         puzzle_id: puzzleId,
         time_seconds: elapsed,
         solution: slotContents,
       });
-      const s = await getUserStreak(user.id, 'numeris')
-      setStreak(s)
+      const s = await getUserStreak(user.id, "numeris");
+      setStreak(s);
     })();
   }, [
     solved,
@@ -281,7 +293,6 @@ export default function NumerisBoard({
     }
     return null;
   })();
-
 
   const resultClass = [
     styles.resultBox,
@@ -373,9 +384,7 @@ export default function NumerisBoard({
             <div className={styles.solvedSub}>
               Completed in {fmtTime(existingScore ?? elapsed)}
             </div>
-            {streak > 0 && (
-              <div className={styles.solvedSub}>{streak}🔥</div>
-            )}
+            {streak > 0 && <div className={styles.solvedSub}>{streak}🔥</div>}
           </div>
         )}
       </div>
