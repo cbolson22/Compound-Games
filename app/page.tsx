@@ -60,19 +60,19 @@ function MedalRow({
 const TUTORIAL_CONTENT: Record<string, { title: string; body: string }> = {
   numeris: {
     title: "How to play Numeris",
-    body: "Arrange the number and operator tiles into the slots to form a math equation that equals the target number. Drag tiles from the tray into the slots, or tap a tile to place it in the next empty slot. Tap a filled slot to send it back to the tray.",
+    body: "Arrange the number and operator tiles into the slots to form a math equation that equals the target number. Drag tiles from the tray into the slots, or tap a tile to place it in the next empty slot. Tap a filled slot to send it back to the tray. You must use all tiles.",
   },
   lumis: {
     title: "How to play Lumis",
-    body: "A pattern of lit cells briefly appears on the grid, then goes dark. Recreate the pattern from memory by clicking the correct cells. The faster you match it, the better your time.",
+    body: "A pattern of lit cells appears on the grid, then goes dark once you pick up your first piece. Recreate the pattern from memory by dragging each piece into the correct place, or clicking a piece then clicking the correct cell to place it. You can reset the board at any time to see the pattern again.",
   },
   verba: {
     title: "How to play Verba",
-    body: "Place letter tiles onto the grid to form words across rows and columns. Words are detected automatically — longer words and rarer letters score more points. Arrange your tiles to maximize your score before time runs out.",
+    body: "Place letter tiles onto the grid to form words across rows and columns. Letters always fall to the bottom of the column when placed. Words are detected automatically — longer words and rarer letters score more points. Arrange your tiles to maximize your score before time runs out. Be careful: any extra letters connected to a valid word will void that word.",
   },
   aquarum: {
     title: "How to play Aquarum",
-    body: "Rotate the pipe segments to connect the flow from the inlet to the outlet. Tap any pipe to rotate it. Complete the path as fast as you can.",
+    body: "Rotate the pipe segments to connect each colored inlet to its matching colored outlet. Tap any pipe to rotate it. All paths must be completed to solve the puzzle.",
   },
 };
 
@@ -91,15 +91,19 @@ function TutorialModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl p-7 w-full max-w-sm flex flex-col gap-4"
+        className="bg-white rounded-2xl p-7 w-full max-w-lg flex flex-col gap-4"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="font-serif text-2xl text-[#1a1a1a]">{content.title}</h2>
         <p className="text-sm text-[#555] leading-relaxed">{content.body}</p>
-        <div className="w-full aspect-video bg-[#f5f5f5] rounded-xl border border-[#eee] flex items-center justify-center">
-          {/* Replace with <video src={`/${game}-tutorial.mp4`} autoPlay loop muted playsInline /> */}
-          <span className="text-sm text-[#bbb]">Video coming soon</span>
-        </div>
+        <video
+          src={`/${game}-tutorial.mov`}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full rounded-xl"
+        />
         <button
           className="w-full py-3 rounded-full bg-[#1a1a1a] text-white text-sm font-medium hover:opacity-85 transition-opacity"
           onClick={onClose}
