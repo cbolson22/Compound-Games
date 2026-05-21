@@ -23,10 +23,11 @@ export async function GET(request: Request) {
       .select('puzzle_date')
       .lt('puzzle_date', today)
     const dates = [...new Set((rows ?? []).map(r => r.puzzle_date))].sort()
+    const details: Record<string, Awaited<ReturnType<typeof awardMedalsForDate>>> = {}
     for (const date of dates) {
-      await awardMedalsForDate(date)
+      details[date] = await awardMedalsForDate(date)
     }
-    return NextResponse.json({ backfilled: dates.length, dates })
+    return NextResponse.json({ backfilled: dates.length, dates, details })
   }
 
   const puzzleDate = url.searchParams.get('date') ?? getTomorrowCT()
@@ -49,7 +50,6 @@ export async function GET(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Award medals for yesterday's (now closed) puzzles
   await awardMedalsForDate(getYesterdayCT())
 
   return NextResponse.json({ date: puzzleDate, puzzles })

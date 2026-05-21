@@ -26,27 +26,48 @@ function computeStreakAtDate(allDates: string[], targetDate: string): number {
   return streak
 }
 
-export async function awardMedalsForDate(date: string): Promise<void> {
+type AwardResult = {
+  game: Game
+  puzzleFound: boolean
+  scoresFound: number
+  medalsInserted: number
+  error?: string
+}
+
+export async function awardMedalsForDate(date: string): Promise<AwardResult[]> {
+  const results: AwardResult[] = []
+
   for (const game of GAMES) {
-    const { data: puzzle } = await supabase
+    const result: AwardResult = { game, puzzleFound: false, scoresFound: 0, medalsInserted: 0 }
+
+    const { data: puzzle, error: puzzleError } = await supabase
       .from('daily_puzzles')
       .select('id')
       .eq('game', game)
       .eq('puzzle_date', date)
       .single()
 
-    if (!puzzle) continue
+    if (puzzleError || !puzzle) {
+      result.error = puzzleError?.message ?? 'puzzle not found'
+      results.push(result)
+      continue
+    }
+    result.puzzleFound = true
 
-    const { data: scores } = await supabase
+    const { data: scores, error: scoresError } = await supabase
       .from('scores')
       .select('user_id, time_seconds, score, created_at')
       .eq('puzzle_id', puzzle.id)
 
-    if (!scores || scores.length === 0) continue
+    if (scoresError || !scores || scores.length === 0) {
+      result.error = scoresError?.message ?? 'no scores'
+      results.push(result)
+      continue
+    }
+    result.scoresFound = scores.length
 
     const userIds = scores.map(s => s.user_id)
 
-    // Fetch all solve dates for these users up to and including the target date
     const { data: history } = await supabase
       .from('scores')
       .select('user_id, daily_puzzles!inner(puzzle_date)')
@@ -85,12 +106,19 @@ export async function awardMedalsForDate(date: string): Promise<void> {
       medal_type: medalTypes[i],
     }))
 
-    // Delete any existing awards for this game+date then reinsert (idempotent)
     await supabase.from('medals').delete().eq('game', game).eq('puzzle_date', date)
-    if (medals.length > 0) {
-      await supabase.from('medals').insert(medals)
+
+    const { error: insertError } = await supabase.from('medals').insert(medals)
+    if (insertError) {
+      result.error = insertError.message
+    } else {
+      result.medalsInserted = medals.length
     }
+
+    results.push(result)
   }
+
+  return results
 }
 
 export async function getMedalCounts(userId: string): Promise<AllMedalCounts> {
