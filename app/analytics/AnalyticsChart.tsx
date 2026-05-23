@@ -43,8 +43,18 @@ const GAME_COLORS: Record<Game, string> = {
 function formatDate(dateStr: string): string {
   const [, month, day] = dateStr.split("-");
   const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
   return `${months[parseInt(month) - 1]} ${parseInt(day)}`;
 }
@@ -77,7 +87,10 @@ export default function AnalyticsChart({ data }: { data: DailyData[] }) {
       </div>
 
       <ResponsiveContainer width="100%" height={360}>
-        <LineChart data={formatted} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
+        <LineChart
+          data={formatted}
+          margin={{ top: 8, right: 24, left: 0, bottom: 8 }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="date" tick={{ fontSize: 12, fill: "#999" }} />
           <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#999" }} />

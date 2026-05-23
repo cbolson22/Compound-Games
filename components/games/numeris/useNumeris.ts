@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { safeEvalExpr } from '@/lib/math'
 
 export interface TileData {
   val: string
@@ -50,12 +51,8 @@ function evalSlots(slotContents: (string | null)[]): number | null {
   if (!expr) return null
   if (/^[+*/]/.test(expr) || /[+\-*/]$/.test(expr)) return null
   if (/\([+\-*/]/.test(expr) || /[+\-*/]\)/.test(expr)) return null
-  try {
-    const r = Function('"use strict";return(' + expr + ')')() as number
-    return isFinite(r) ? Math.round(r * 1e9) / 1e9 : null
-  } catch {
-    return null
-  }
+  const r = safeEvalExpr(expr)
+  return r !== null && isFinite(r) ? Math.round(r * 1e9) / 1e9 : null
 }
 
 export function useNumeris(

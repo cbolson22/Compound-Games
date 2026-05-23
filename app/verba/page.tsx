@@ -11,8 +11,6 @@ export const metadata: Metadata = {
   title: 'Verba — Compound Games',
 }
 
-const FALLBACK_PUZZLE: VerbaPuzzle = generateVerba()
-
 async function getTodaysPuzzle(): Promise<{ puzzle: VerbaPuzzle; puzzleId: string | null }> {
   const today = getTodaysCT()
   const { data } = await supabase
@@ -22,7 +20,7 @@ async function getTodaysPuzzle(): Promise<{ puzzle: VerbaPuzzle; puzzleId: strin
     .eq('puzzle_date', today)
     .single()
   return {
-    puzzle: (data?.puzzle_data as VerbaPuzzle) ?? FALLBACK_PUZZLE,
+    puzzle: (data?.puzzle_data as VerbaPuzzle) ?? generateVerba(),
     puzzleId: data?.id ?? null,
   }
 }

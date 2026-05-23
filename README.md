@@ -1,21 +1,24 @@
 # Compound Games
 
-Daily puzzle site for a friend group. Each game resets at midnight Central Time.
+Daily puzzle site for a friend group. Four games, each resetting at midnight Central Time.
 
 **Live:** https://compound-games.vercel.app
 
 ## Games
 
-- **Numeris** — arrange digit/operator tiles to match a target number
-- **Lumis** — memorize a lit pattern on a 7×7 grid, then place tetris-like pieces from memory
+- **Numeris** — arrange digit and operator tiles into slots to form a math equation that equals the target number
+- **Lumis** — memorize a lit pattern on a grid, then recreate it by placing pieces from memory
+- **Verba** — place letter tiles onto a grid to form words; letters fall to the bottom of each column; score is based on word length and letter rarity
+- **Aquarum** — rotate pipe segments to connect each colored inlet to its matching colored outlet
 
 ## Stack
 
-- Next.js App Router, TypeScript
-- Tailwind CSS v4
+- Next.js 16 App Router, TypeScript
+- Tailwind CSS v4 (CSS Modules for game-specific styles)
 - Supabase (Postgres + Auth)
 - dnd-kit (drag and drop)
-- Vercel (hosting + cron jobs)
+- Recharts (analytics chart)
+- Vercel (hosting + cron)
 
 ## Local development
 
@@ -33,14 +36,26 @@ CRON_SECRET=any-local-secret
 ## Manually trigger puzzle generation
 
 ```bash
-# Generate tomorrow's puzzles (same as nightly cron)
+# Generate tomorrow's puzzles + award yesterday's medals (same as nightly cron)
 curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
   "https://compound-games.vercel.app/api/generate-puzzle"
 
 # Generate for a specific date
 curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
   "https://compound-games.vercel.app/api/generate-puzzle?date=2026-05-15"
+
+# Backfill medals for all past dates
+curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
+  "https://compound-games.vercel.app/api/generate-puzzle?backfill=true"
 ```
+
+## Nightly cron
+
+Vercel runs `/api/generate-puzzle` at 4am UTC (~11pm CT). It generates tomorrow's puzzles for all four games and awards gold/silver/bronze medals for yesterday. Medal tiebreak order: primary metric (time ASC for most games, score DESC for Verba) → streak DESC → completed_at ASC.
+
+## Analytics
+
+Visit `/analytics` to see daily unique player counts per game. No login required — access by URL only.
 
 ## Database schema
 
@@ -52,7 +67,7 @@ create table profiles (
 
 create table daily_puzzles (
   id uuid primary key default gen_random_uuid(),
-  game text not null check (game in ('numeris', 'lumis')),
+  game text not null check (game in ('numeris', 'lumis', 'verba', 'aquarum')),
   puzzle_date date not null,
   puzzle_data jsonb not null,
   unique(game, puzzle_date)
@@ -62,17 +77,29 @@ create table scores (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles(id),
   puzzle_id uuid references daily_puzzles(id),
-  time_seconds integer not null,
+  time_seconds integer,
+  score integer,
   solution jsonb,
-  created_at timestamptz default now()
+  completed_at timestamptz default now()
 );
+
+create table medals (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id),
+  game text not null,
+  puzzle_date date not null,
+  medal_type text not null check (medal_type in ('gold', 'silver', 'bronze'))
+);
+
+create index on medals(user_id);
+create index on medals(game, puzzle_date);
 ```
 
 ---
 
 ## Adding a new game
 
-Use Numeris or Lumis as reference. Follow these steps in order.
+Use an existing game (Numeris or Aquarum recommended) as reference. Follow these steps in order.
 
 ### 1. Puzzle generator — `lib/puzzles/<game>.ts`
 
@@ -80,21 +107,21 @@ Export a `generate<Game>()` function returning a JSON-serializable puzzle object
 
 ### 2. Game hook — `components/games/<game>/use<Game>.ts`
 
-All game state and logic lives here — no UI. Accept `options?: { initialElapsed?: number; paused?: boolean }` so the board can restore timer state on reload. Derive `solved` via `useMemo` rather than setting it in a `useEffect` to avoid cascading render warnings.
+All game state and logic lives here — no UI. Accept `options?: { initialElapsed?: number; paused?: boolean }` so the board can restore timer state on reload. Derive `solved` as a plain `const` (not in `useEffect`) to avoid cascading render warnings.
 
 ### 3. Board component — `components/games/<game>/<Game>Board.tsx`
 
 Mark `'use client'`. Responsibilities:
 - Accept `puzzle` and `puzzleId` props
-- On mount, check Supabase for an existing score; pause the timer while loading (`paused: loadingScore || existingScore !== null`)
-- On solve, save to `scores` table (guard with `useRef` to prevent double-submit), save `solution` as the final game state so it can be restored on reload
-- Persist in-progress timer to `localStorage` keyed by `puzzleId` (or today's CT date as fallback); remove on solve
-- Restore board state from `solution` on reload via a `restore*` function exposed by the hook
+- On mount, check Supabase for an existing score; pause the timer while loading
+- On solve, save to `scores` table (guard with `useRef` to prevent double-submit), save `solution` as final game state so it can be restored on reload
+- Persist in-progress timer to `localStorage` keyed by `puzzleId`; remove on solve
+- Restore board state from `solution` on reload
 - Show streak after solve via `getUserStreak(userId, '<game>')`
 
 ### 4. CSS module — `components/games/<game>/<game>.module.css`
 
-Match the design language: DM Serif for title, DM Mono for timer, Outfit for buttons. Same border radius, color, and spacing conventions as Numeris/Lumis.
+Match the design language: DM Serif for title, DM Mono for timer, Outfit for buttons.
 
 ### 5. Client wrapper — `app/<game>/<Game>Client.tsx`
 
@@ -111,7 +138,7 @@ The `dynamic` import must live in a `'use client'` file.
 
 ### 6. Page — `app/<game>/page.tsx`
 
-Server component. Add `export const dynamic = 'force-dynamic'` (prevents static caching so scores always reflect live data). Fetch today's puzzle from `daily_puzzles` using `getTodaysCT()`. Include a hardcoded fallback puzzle for when no DB row exists yet.
+Server component. Add `export const dynamic = 'force-dynamic'`. Fetch today's puzzle from `daily_puzzles` using `getTodaysCT()`. Call the generator lazily inside the fetch function (not at module level) as the fallback.
 
 ### 7. Layout — `app/<game>/layout.tsx`
 
@@ -122,30 +149,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 }
 ```
 
-### 8. Cron job — `app/api/generate-puzzle/route.ts`
+### 8. Cron + medals — `app/api/generate-puzzle/route.ts` and `lib/medals.ts`
 
-Import the generator and add it to the `puzzles` array so it generates nightly alongside the other games.
+Add the generator to the `puzzles` array in the route. Add the game name to the `GAMES` constant in `lib/medals.ts` so medals are awarded nightly.
 
-### 9. Database — update the check constraint
+### 9. Database — update check constraints
 
 ```sql
 alter table daily_puzzles drop constraint daily_puzzles_game_check;
 alter table daily_puzzles add constraint daily_puzzles_game_check
-  check (game in ('numeris', 'lumis', '<newgame>'));
+  check (game in ('numeris', 'lumis', 'verba', 'aquarum', '<newgame>'));
 ```
 
 ### 10. Home page — `app/page.tsx`
 
-- Fetch streak: `getUserStreak(user.id, '<game>').then(set<Game>Streak)`
-- Add a `<Link>` tile in the same style as Numeris and Lumis, showing the streak
+- Add a streak `useState` and fetch it in the `useEffect`
+- Add an entry to the `games` array (`href`, `name`, `desc`, `key`, `streak`)
+- Add an entry to `TUTORIAL_CONTENT` with `title` and `body`
+- Add a tutorial video at `public/<game>-tutorial.mov`
 
 ### 11. Leaderboard — `app/leaderboard/page.tsx`
 
-Add `getScores('<game>')` to the `Promise.all` call, fetch streaks for the new game, and add a `<ScoreList>` section.
+Add a score fetch for the new game, include it in the `Promise.all`, fetch streaks, and add a leaderboard section.
 
-### 12. Seed today's puzzle
+### 12. Analytics — `app/analytics/page.tsx` and `AnalyticsChart.tsx`
 
-After deploying, manually generate today's puzzle:
+Add the game to the `GAMES` array in `page.tsx` and to `DailyData`. In `AnalyticsChart.tsx`, add the game to `GAMES`, `GAME_LABELS`, and `GAME_COLORS`.
+
+### 13. Seed today's puzzle
+
+After deploying:
 ```bash
 curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
   "https://compound-games.vercel.app/api/generate-puzzle?date=YYYY-MM-DD"

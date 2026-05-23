@@ -1,11 +1,5 @@
 import { supabase } from './supabase'
-import { getTodaysCT } from './dates'
-
-function dayBefore(dateStr: string): string {
-  const d = new Date(dateStr + 'T12:00:00')
-  d.setDate(d.getDate() - 1)
-  return d.toISOString().split('T')[0]
-}
+import { getTodaysCT, dayBefore } from './dates'
 
 function computeStreak(dates: string[]): number {
   if (dates.length === 0) return 0

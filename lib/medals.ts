@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { dayBefore } from './dates'
 
 const GAMES = ['numeris', 'lumis', 'verba', 'aquarum'] as const
 type Game = typeof GAMES[number]
@@ -6,12 +7,6 @@ type MedalType = 'gold' | 'silver' | 'bronze'
 
 export type MedalCounts = { gold: number; silver: number; bronze: number }
 export type AllMedalCounts = Partial<Record<Game, MedalCounts>>
-
-function dayBefore(dateStr: string): string {
-  const d = new Date(dateStr + 'T12:00:00')
-  d.setDate(d.getDate() - 1)
-  return d.toISOString().split('T')[0]
-}
 
 function computeStreakAtDate(allDates: string[], targetDate: string): number {
   const sorted = allDates

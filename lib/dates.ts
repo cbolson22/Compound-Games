@@ -7,9 +7,12 @@ export function getTomorrowCT(): string {
   return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().split('T')[0]
 }
 
+export function dayBefore(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  d.setDate(d.getDate() - 1)
+  return d.toISOString().split('T')[0]
+}
+
 export function getYesterdayCT(): string {
-  const today = getTodaysCT()
-  const dt = new Date(today + 'T12:00:00')
-  dt.setDate(dt.getDate() - 1)
-  return dt.toISOString().split('T')[0]
+  return dayBefore(getTodaysCT())
 }

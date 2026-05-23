@@ -1,4 +1,5 @@
 import type { Puzzle } from '@/components/games/numeris/useNumeris'
+import { safeEvalExpr } from '@/lib/math'
 
 const ADD_SUB = ['+', '−']
 
@@ -23,12 +24,8 @@ function toJS(tokens: string[]): string {
 }
 
 function evalTokens(tokens: string[]): number | null {
-  try {
-    const r = Function('"use strict";return(' + toJS(tokens) + ')')() as number
-    return Number.isInteger(r) && isFinite(r) && r >= 10 && r <= 500 ? r : null
-  } catch {
-    return null
-  }
+  const r = safeEvalExpr(toJS(tokens))
+  return r !== null && Number.isInteger(r) && isFinite(r) && r >= 10 && r <= 500 ? r : null
 }
 
 function shuffle<T>(arr: T[]): T[] {
