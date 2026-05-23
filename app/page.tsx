@@ -139,28 +139,14 @@ export default function Home() {
     {
       href: "/numeris",
       name: "Numeris",
-      desc: "Daily Number Puzzle",
       streak: numerisStreak,
       key: "numeris",
     },
-    {
-      href: "/lumis",
-      name: "Lumis",
-      desc: "Daily Memory Puzzle",
-      streak: lumisStreak,
-      key: "lumis",
-    },
-    {
-      href: "/verba",
-      name: "Verba",
-      desc: "Daily Word Game",
-      streak: verbaStreak,
-      key: "verba",
-    },
+    { href: "/lumis", name: "Lumis", streak: lumisStreak, key: "lumis" },
+    { href: "/verba", name: "Verba", streak: verbaStreak, key: "verba" },
     {
       href: "/aquarum",
       name: "Aquarum",
-      desc: "Daily Pipe Puzzle",
       streak: aquarumStreak,
       key: "aquarum",
     },
@@ -182,16 +168,15 @@ export default function Home() {
           >
             <div className="flex flex-col gap-1">
               <span className="font-serif text-2xl">{g.name}</span>
-              <span className="text-sm text-[#aaa]">{g.desc}</span>
               <button
-                className="text-xs text-[#bbb] hover:text-[#555] transition-colors text-left leading-none"
+                className="text-xs font-medium text-[#555] border border-[#ddd] rounded-full px-2.5 py-0.5 hover:border-[#aaa] hover:text-[#1a1a1a] transition-all w-fit"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   setActiveTutorial(g.key);
                 }}
               >
-                How to play →
+                Tutorial
               </button>
             </div>
             {playedGames !== null && (
