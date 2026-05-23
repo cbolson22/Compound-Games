@@ -3,6 +3,10 @@
     {
       "path": "/api/generate-puzzle",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/award-medals",
+      "schedule": "0 9 * * *"
     }
   ]
 }

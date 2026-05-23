@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getTodaysCT, getTomorrowCT, getYesterdayCT } from '@/lib/dates'
+import { getTodaysCT, getTomorrowCT } from '@/lib/dates'
 import { generateNumeris } from '@/lib/puzzles/numeris'
 import { generateLumis } from '@/lib/puzzles/lumis'
 import { generateVerba } from '@/lib/puzzles/verba'
@@ -48,8 +48,6 @@ export async function GET(request: Request) {
     )
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  await awardMedalsForDate(getYesterdayCT())
 
   return NextResponse.json({ date: puzzleDate, puzzles })
 }
