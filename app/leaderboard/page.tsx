@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   title: "Leaderboard — Compound Games",
 };
 
-type TimeScoreRow  = { user_id: string; time_seconds: number; completed_at: string; profiles: { username: string } | null };
-type PointScoreRow = { user_id: string; score: number;        completed_at: string; profiles: { username: string } | null };
+type TimeScoreRow  = { user_id: string; time_seconds: number; profiles: { username: string } | null };
+type PointScoreRow = { user_id: string; score: number;        profiles: { username: string } | null };
 
 async function getPuzzleId(game: string): Promise<string | null> {
   const { data } = await supabase
@@ -29,9 +29,10 @@ async function getTimeScores(game: string): Promise<TimeScoreRow[]> {
   if (!puzzleId) return [];
   const { data } = await supabase
     .from("scores")
-    .select("user_id, time_seconds, completed_at, profiles(username)")
+    .select("user_id, time_seconds, profiles(username)")
     .eq("puzzle_id", puzzleId)
-    .order("time_seconds", { ascending: true });
+    .order("time_seconds", { ascending: true })
+    .order("completed_at", { ascending: true });
   return (data ?? []) as unknown as TimeScoreRow[];
 }
 
@@ -40,24 +41,11 @@ async function getPointScores(game: string): Promise<PointScoreRow[]> {
   if (!puzzleId) return [];
   const { data } = await supabase
     .from("scores")
-    .select("user_id, score, completed_at, profiles(username)")
+    .select("user_id, score, profiles(username)")
     .eq("puzzle_id", puzzleId)
-    .order("score", { ascending: false });
+    .order("score", { ascending: false })
+    .order("completed_at", { ascending: true });
   return (data ?? []) as unknown as PointScoreRow[];
-}
-
-function applyTiebreaks<T extends { user_id: string; completed_at: string }>(
-  scores: T[],
-  streaks: Record<string, number>,
-  primary: (a: T, b: T) => number
-): T[] {
-  return [...scores].sort((a, b) => {
-    const p = primary(a, b)
-    if (p !== 0) return p
-    const streakDiff = (streaks[b.user_id] ?? 0) - (streaks[a.user_id] ?? 0)
-    if (streakDiff !== 0) return streakDiff
-    return new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime()
-  })
 }
 
 export default async function LeaderboardPage() {
@@ -76,9 +64,6 @@ export default async function LeaderboardPage() {
     getStreaksForUsers(allUserIds, 'aquarum'),
   ]);
 
-  const byTime = (a: TimeScoreRow, b: TimeScoreRow) => a.time_seconds - b.time_seconds
-  const byScore = (a: PointScoreRow, b: PointScoreRow) => (b.score ?? 0) - (a.score ?? 0)
-
   return (
     <main className="min-h-screen flex flex-col items-center p-8">
       <nav className="px-5 pt-5 w-full">
@@ -93,10 +78,10 @@ export default async function LeaderboardPage() {
       </div>
 
       <LeaderboardTabs
-        numerisScores={applyTiebreaks(numerisScores, numerisStreaks, byTime)}
-        lumisScores={applyTiebreaks(lumisScores, lumisStreaks, byTime)}
-        verbaScores={applyTiebreaks(verbaScores, verbaStreaks, byScore)}
-        aquarumScores={applyTiebreaks(aquarumScores, aquarumStreaks, byTime)}
+        numerisScores={numerisScores}
+        lumisScores={lumisScores}
+        verbaScores={verbaScores}
+        aquarumScores={aquarumScores}
         numerisStreaks={numerisStreaks}
         lumisStreaks={lumisStreaks}
         verbaStreaks={verbaStreaks}
