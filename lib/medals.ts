@@ -7,9 +7,9 @@ type MedalType = 'gold' | 'silver' | 'bronze'
 export type MedalCounts = { gold: number; silver: number; bronze: number }
 export type AllMedalCounts = Partial<Record<Game, MedalCounts>>
 
-export async function awardMedalsForDate(date: string): Promise<void> {
+export async function awardMedalsForDate(date: string, db = supabase): Promise<void> {
   for (const game of GAMES) {
-    const { data: puzzle } = await supabase
+    const { data: puzzle } = await db
       .from('daily_puzzles')
       .select('id')
       .eq('game', game)
@@ -18,7 +18,7 @@ export async function awardMedalsForDate(date: string): Promise<void> {
 
     if (!puzzle) continue
 
-    const { data: scores } = await supabase
+    const { data: scores } = await db
       .from('scores')
       .select('user_id, time_seconds, score')
       .eq('puzzle_id', puzzle.id)
@@ -59,9 +59,9 @@ export async function awardMedalsForDate(date: string): Promise<void> {
       rank += tier.length
     }
 
-    await supabase.from('medals').delete().eq('game', game).eq('puzzle_date', date)
+    await db.from('medals').delete().eq('game', game).eq('puzzle_date', date)
     if (medals.length > 0) {
-      await supabase.from('medals').insert(medals)
+      await db.from('medals').insert(medals)
     }
   }
 }

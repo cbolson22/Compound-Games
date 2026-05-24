@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { getYesterdayCT } from '@/lib/dates'
 import { awardMedalsForDate } from '@/lib/medals'
 
@@ -9,6 +10,6 @@ export async function GET(request: Request) {
   }
 
   const date = getYesterdayCT()
-  await awardMedalsForDate(date)
+  await awardMedalsForDate(date, supabaseAdmin)
   return NextResponse.json({ awarded: date })
 }
