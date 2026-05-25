@@ -16,3 +16,9 @@ export function dayBefore(dateStr: string): string {
 export function getYesterdayCT(): string {
   return dayBefore(getTodaysCT())
 }
+
+export function nDaysBefore(n: number, dateStr: string): string {
+  let d = dateStr
+  for (let i = 0; i < n; i++) d = dayBefore(d)
+  return d
+}

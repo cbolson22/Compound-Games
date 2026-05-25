@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-const GAMES = ['numeris', 'lumis', 'verba', 'aquarum'] as const
+const GAMES = ['numeris', 'lumis', 'verba', 'aquarum', 'compondus'] as const
 type Game = typeof GAMES[number]
 type MedalType = 'gold' | 'silver' | 'bronze'
 
@@ -28,16 +28,18 @@ export async function awardMedalsForDate(date: string, db = supabase): Promise<v
     const sorted = [...scores].sort((a, b) =>
       game === 'verba'
         ? (b.score ?? 0) - (a.score ?? 0)
+        : game === 'compondus'
+        ? (a.score ?? 0) - (b.score ?? 0)
         : a.time_seconds - b.time_seconds
     )
 
     // Group into tiers of identical primary metric value
     const tiers: typeof sorted[] = []
     for (const s of sorted) {
-      const metric = game === 'verba' ? s.score : s.time_seconds
+      const metric = game === 'verba' || game === 'compondus' ? s.score : s.time_seconds
       const last = tiers[tiers.length - 1]
       const lastMetric = last
-        ? (game === 'verba' ? last[0].score : last[0].time_seconds)
+        ? (game === 'verba' || game === 'compondus' ? last[0].score : last[0].time_seconds)
         : undefined
       if (last && metric === lastMetric) {
         last.push(s)
