@@ -4,7 +4,7 @@ import AnalyticsChart, { type DailyData } from "./AnalyticsChart";
 
 export const dynamic = "force-dynamic";
 
-const GAMES = ["numeris", "lumis", "verba", "aquarum"] as const;
+const GAMES = ["numeris", "lumis", "verba", "aquarum", "compondus"] as const;
 
 async function getDailyPlayers(): Promise<DailyData[]> {
   const { data: puzzles } = await supabase
@@ -43,10 +43,11 @@ async function getDailyPlayers(): Promise<DailyData[]> {
     const uniqueTotal = new Set(Object.values(dayGames).flatMap((s) => [...s])).size;
     return {
       date,
-      numeris: dayGames.numeris?.size ?? 0,
-      lumis: dayGames.lumis?.size ?? 0,
-      verba: dayGames.verba?.size ?? 0,
-      aquarum: dayGames.aquarum?.size ?? 0,
+      numeris:   dayGames.numeris?.size   ?? 0,
+      lumis:     dayGames.lumis?.size     ?? 0,
+      verba:     dayGames.verba?.size     ?? 0,
+      aquarum:   dayGames.aquarum?.size   ?? 0,
+      compondus: dayGames.compondus?.size ?? 0,
       total: uniqueTotal,
     };
   });
@@ -56,10 +57,11 @@ export default async function AnalyticsPage() {
   const data = await getDailyPlayers();
 
   const totals = {
-    numeris: data.reduce((s, d) => s + d.numeris, 0),
-    lumis: data.reduce((s, d) => s + d.lumis, 0),
-    verba: data.reduce((s, d) => s + d.verba, 0),
-    aquarum: data.reduce((s, d) => s + d.aquarum, 0),
+    numeris:   data.reduce((s, d) => s + d.numeris,   0),
+    lumis:     data.reduce((s, d) => s + d.lumis,     0),
+    verba:     data.reduce((s, d) => s + d.verba,     0),
+    aquarum:   data.reduce((s, d) => s + d.aquarum,   0),
+    compondus: data.reduce((s, d) => s + d.compondus, 0),
   };
 
   return (

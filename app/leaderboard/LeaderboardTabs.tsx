@@ -40,18 +40,26 @@ function pointRanks(scores: PointScoreRow[]): number[] {
   return ranks;
 }
 
+type LowScoreRow = {
+  user_id: string;
+  score: number;
+  profiles: { username: string } | null;
+};
+
 export type LeaderboardData = {
   numerisScores: TimeScoreRow[];
   lumisScores: TimeScoreRow[];
   verbaScores: PointScoreRow[];
   aquarumScores: TimeScoreRow[];
+  compondusScores: LowScoreRow[];
   numerisStreaks: Record<string, number>;
   lumisStreaks: Record<string, number>;
   verbaStreaks: Record<string, number>;
   aquarumStreaks: Record<string, number>;
+  compondusStreaks: Record<string, number>;
 };
 
-type Tab = "numeris" | "lumis" | "verba" | "aquarum";
+type Tab = "numeris" | "lumis" | "verba" | "aquarum" | "compondus";
 
 const MEDAL_BG = ["#fffbeb", "#f8fafc", "#fef3e8"];
 const MEDAL_BORDER = ["#d97706", "#94a3b8", "#b45309"];
@@ -150,11 +158,48 @@ function PointList({
   );
 }
 
+function wrongRanks(scores: LowScoreRow[]): number[] {
+  const ranks: number[] = [];
+  for (let i = 0; i < scores.length; i++) {
+    ranks.push(i === 0 ? 0 : scores[i].score === scores[i - 1].score ? ranks[i - 1] : i);
+  }
+  return ranks;
+}
+
+function LowScoreList({
+  scores,
+  streaks,
+  userId,
+}: {
+  scores: LowScoreRow[];
+  streaks: Record<string, number>;
+  userId?: string;
+}) {
+  if (!scores.length)
+    return <p className="text-sm text-[#aaa]">No solves yet today.</p>;
+  const ranks = wrongRanks(scores);
+  return (
+    <div className="w-full flex flex-col gap-2">
+      {scores.map((s, i) => (
+        <ScoreRow
+          key={i}
+          rank={ranks[i]}
+          username={s.profiles?.username ?? "—"}
+          streak={streaks[s.user_id] ?? 0}
+          value={`${s.score} wrong`}
+          isMe={s.user_id === userId}
+        />
+      ))}
+    </div>
+  );
+}
+
 const TABS: { id: Tab; label: string }[] = [
-  { id: "numeris", label: "Numeris" },
-  { id: "lumis", label: "Lumis" },
-  { id: "verba", label: "Verba" },
-  { id: "aquarum", label: "Aquarum" },
+  { id: "numeris",   label: "Numeris"   },
+  { id: "lumis",     label: "Lumis"     },
+  { id: "verba",     label: "Verba"     },
+  { id: "aquarum",   label: "Aquarum"   },
+  { id: "compondus", label: "Compondus" },
 ];
 
 export default function LeaderboardTabs({
@@ -162,10 +207,12 @@ export default function LeaderboardTabs({
   lumisScores,
   verbaScores,
   aquarumScores,
+  compondusScores,
   numerisStreaks,
   lumisStreaks,
   verbaStreaks,
   aquarumStreaks,
+  compondusStreaks,
 }: LeaderboardData) {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("numeris");
@@ -213,6 +260,13 @@ export default function LeaderboardTabs({
         <TimeList
           scores={aquarumScores}
           streaks={aquarumStreaks}
+          userId={user?.id}
+        />
+      )}
+      {tab === "compondus" && (
+        <LowScoreList
+          scores={compondusScores}
+          streaks={compondusStreaks}
           userId={user?.id}
         />
       )}

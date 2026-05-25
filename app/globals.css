@@ -16,3 +16,12 @@ body {
   color: #1a1a1a;
   font-family: var(--font-outfit), sans-serif;
 }
+
+@keyframes newBadgePop {
+  0%, 100% { transform: rotate(-8deg) scale(1); }
+  50%       { transform: rotate(-8deg) scale(1.1); }
+}
+
+.new-badge {
+  animation: newBadgePop 2.4s ease-in-out infinite;
+}

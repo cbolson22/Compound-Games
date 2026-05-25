@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 
 type TimeScoreRow  = { user_id: string; time_seconds: number; profiles: { username: string } | null };
 type PointScoreRow = { user_id: string; score: number;        profiles: { username: string } | null };
+type LowScoreRow   = { user_id: string; score: number;        profiles: { username: string } | null };
 
 async function getPuzzleId(game: string): Promise<string | null> {
   const { data } = await supabase
@@ -48,20 +49,34 @@ async function getPointScores(game: string): Promise<PointScoreRow[]> {
   return (data ?? []) as unknown as PointScoreRow[];
 }
 
+async function getLowScores(game: string): Promise<LowScoreRow[]> {
+  const puzzleId = await getPuzzleId(game);
+  if (!puzzleId) return [];
+  const { data } = await supabase
+    .from("scores")
+    .select("user_id, score, profiles(username)")
+    .eq("puzzle_id", puzzleId)
+    .order("score", { ascending: true })
+    .order("completed_at", { ascending: true });
+  return (data ?? []) as unknown as LowScoreRow[];
+}
+
 export default async function LeaderboardPage() {
-  const [numerisScores, lumisScores, verbaScores, aquarumScores] = await Promise.all([
+  const [numerisScores, lumisScores, verbaScores, aquarumScores, compondusScores] = await Promise.all([
     getTimeScores('numeris'),
     getTimeScores('lumis'),
     getPointScores('verba'),
     getTimeScores('aquarum'),
+    getLowScores('compondus'),
   ]);
 
-  const allUserIds = [...new Set([...numerisScores, ...lumisScores, ...verbaScores, ...aquarumScores].map(s => s.user_id))];
-  const [numerisStreaks, lumisStreaks, verbaStreaks, aquarumStreaks] = await Promise.all([
+  const allUserIds = [...new Set([...numerisScores, ...lumisScores, ...verbaScores, ...aquarumScores, ...compondusScores].map(s => s.user_id))];
+  const [numerisStreaks, lumisStreaks, verbaStreaks, aquarumStreaks, compondusStreaks] = await Promise.all([
     getStreaksForUsers(allUserIds, 'numeris'),
     getStreaksForUsers(allUserIds, 'lumis'),
     getStreaksForUsers(allUserIds, 'verba'),
     getStreaksForUsers(allUserIds, 'aquarum'),
+    getStreaksForUsers(allUserIds, 'compondus'),
   ]);
 
   return (
@@ -82,10 +97,12 @@ export default async function LeaderboardPage() {
         lumisScores={lumisScores}
         verbaScores={verbaScores}
         aquarumScores={aquarumScores}
+        compondusScores={compondusScores}
         numerisStreaks={numerisStreaks}
         lumisStreaks={lumisStreaks}
         verbaStreaks={verbaStreaks}
         aquarumStreaks={aquarumStreaks}
+        compondusStreaks={compondusStreaks}
       />
     </main>
   );

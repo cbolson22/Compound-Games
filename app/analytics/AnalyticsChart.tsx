@@ -17,27 +17,30 @@ export type DailyData = {
   lumis: number;
   verba: number;
   aquarum: number;
+  compondus: number;
   total: number;
 };
 
-type Game = "numeris" | "lumis" | "verba" | "aquarum" | "total";
+type Game = "numeris" | "lumis" | "verba" | "aquarum" | "compondus" | "total";
 
-const GAMES: Game[] = ["total", "numeris", "lumis", "verba", "aquarum"];
+const GAMES: Game[] = ["total", "numeris", "lumis", "verba", "aquarum", "compondus"];
 
 const GAME_LABELS: Record<Game, string> = {
-  total: "All Users",
-  numeris: "Numeris",
-  lumis: "Lumis",
-  verba: "Verba",
-  aquarum: "Aquarum",
+  total:     "All Users",
+  numeris:   "Numeris",
+  lumis:     "Lumis",
+  verba:     "Verba",
+  aquarum:   "Aquarum",
+  compondus: "Compondus",
 };
 
 const GAME_COLORS: Record<Game, string> = {
-  total: "#1a1a1a",
-  numeris: "#2563eb",
-  lumis: "#16a34a",
-  verba: "#9333ea",
-  aquarum: "#ea580c",
+  total:     "#1a1a1a",
+  numeris:   "#2563eb",
+  lumis:     "#16a34a",
+  verba:     "#9333ea",
+  aquarum:   "#ea580c",
+  compondus: "#0891b2",
 };
 
 function formatDate(dateStr: string): string {

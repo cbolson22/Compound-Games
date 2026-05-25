@@ -13,7 +13,7 @@ async function fetchPlayedGames(userId: string): Promise<Set<string>> {
     .from("daily_puzzles")
     .select("id, game")
     .eq("puzzle_date", getTodaysCT())
-    .in("game", ["numeris", "lumis", "verba", "aquarum"]);
+    .in("game", ["numeris", "lumis", "verba", "aquarum", "compondus"]);
   if (!puzzles?.length) return new Set();
 
   const { data: scores } = await supabase
@@ -74,6 +74,10 @@ const TUTORIAL_CONTENT: Record<string, { title: string; body: string }> = {
     title: "How to play Aquarum",
     body: "Rotate the pipe segments to connect each colored inlet to its matching colored outlet. Tap any pipe to rotate it. All paths must be completed to solve the puzzle.",
   },
+  compondus: {
+    title: "How to play Compondus",
+    body: "You are shown two words — the top and bottom of a chain. Fill in the missing words in between so that each consecutive pair forms a compound word or phrase (e.g. FIRE → TRUCK → LOAD). The first letter of each hidden word is revealed as a hint. Wrong guesses reveal the next letter. Your score is your total number of wrong guesses — lower is better.",
+  },
 };
 
 function TutorialModal({
@@ -121,6 +125,7 @@ export default function Home() {
   const [lumisStreak, setLumisStreak] = useState(0);
   const [verbaStreak, setVerbaStreak] = useState(0);
   const [aquarumStreak, setAquarumStreak] = useState(0);
+  const [compondusStreak, setCompondusStreak] = useState(0);
   const [playedGames, setPlayedGames] = useState<Set<string> | null>(null);
   const [medals, setMedals] = useState<AllMedalCounts | null>(null);
   const [activeTutorial, setActiveTutorial] = useState<string | null>(null);
@@ -131,25 +136,17 @@ export default function Home() {
     getUserStreak(user.id, "lumis").then(setLumisStreak);
     getUserStreak(user.id, "verba").then(setVerbaStreak);
     getUserStreak(user.id, "aquarum").then(setAquarumStreak);
+    getUserStreak(user.id, "compondus").then(setCompondusStreak);
     fetchPlayedGames(user.id).then(setPlayedGames);
     getMedalCounts(user.id).then(setMedals);
   }, [user]);
 
   const games = [
-    {
-      href: "/numeris",
-      name: "Numeris",
-      streak: numerisStreak,
-      key: "numeris",
-    },
-    { href: "/lumis", name: "Lumis", streak: lumisStreak, key: "lumis" },
-    { href: "/verba", name: "Verba", streak: verbaStreak, key: "verba" },
-    {
-      href: "/aquarum",
-      name: "Aquarum",
-      streak: aquarumStreak,
-      key: "aquarum",
-    },
+    { href: "/numeris",   name: "Numeris",   streak: numerisStreak,   key: "numeris",   isNew: false },
+    { href: "/lumis",     name: "Lumis",     streak: lumisStreak,     key: "lumis",     isNew: false },
+    { href: "/verba",     name: "Verba",     streak: verbaStreak,     key: "verba",     isNew: false },
+    { href: "/aquarum",   name: "Aquarum",   streak: aquarumStreak,   key: "aquarum",   isNew: false },
+    { href: "/compondus", name: "Compondus", streak: compondusStreak, key: "compondus", isNew: true  },
   ];
 
   return (
@@ -161,44 +158,50 @@ export default function Home() {
 
       <div className="flex flex-col gap-4 w-full max-w-sm">
         {games.map((g) => (
-          <Link
-            key={g.key}
-            href={g.href}
-            className="flex items-start justify-between gap-2 px-6 pt-4 pb-4 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors"
-          >
-            <div className="flex flex-col gap-1">
-              <span className="font-serif text-2xl">{g.name}</span>
-              <button
-                className="text-xs font-medium text-[#555] border border-[#ddd] rounded-full px-2.5 py-0.5 hover:border-[#aaa] hover:text-[#1a1a1a] transition-all w-fit"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setActiveTutorial(g.key);
-                }}
-              >
-                Tutorial
-              </button>
-            </div>
-            {playedGames !== null && (
-              <div className="flex flex-col items-end gap-1 shrink-0">
-                <StatusBadge played={playedGames.has(g.key)} />
-                {g.streak > 0 && (
-                  <span className="text-sm text-[#aaa]">{g.streak}🔥</span>
-                )}
-                {medals !== null && (
-                  <MedalRow
-                    counts={
-                      medals[g.key as keyof AllMedalCounts] ?? {
-                        gold: 0,
-                        silver: 0,
-                        bronze: 0,
-                      }
-                    }
-                  />
-                )}
-              </div>
+          <div key={g.key} className="relative">
+            {g.isNew && (
+              <span className="new-badge absolute -top-2.5 -left-2 z-10 bg-violet-600 text-white text-[0.55rem] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full pointer-events-none select-none">
+                new game
+              </span>
             )}
-          </Link>
+            <Link
+              href={g.href}
+              className="flex items-start justify-between gap-2 px-6 pt-4 pb-4 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors"
+            >
+              <div className="flex flex-col gap-1">
+                <span className="font-serif text-2xl">{g.name}</span>
+                <button
+                  className="text-xs font-medium text-[#555] border border-[#ddd] rounded-full px-2.5 py-0.5 hover:border-[#aaa] hover:text-[#1a1a1a] transition-all w-fit"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveTutorial(g.key);
+                  }}
+                >
+                  Tutorial
+                </button>
+              </div>
+              {playedGames !== null && (
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <StatusBadge played={playedGames.has(g.key)} />
+                  {g.streak > 0 && (
+                    <span className="text-sm text-[#aaa]">{g.streak}🔥</span>
+                  )}
+                  {medals !== null && (
+                    <MedalRow
+                      counts={
+                        medals[g.key as keyof AllMedalCounts] ?? {
+                          gold: 0,
+                          silver: 0,
+                          bronze: 0,
+                        }
+                      }
+                    />
+                  )}
+                </div>
+              )}
+            </Link>
+          </div>
         ))}
 
         <Link
