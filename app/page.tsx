@@ -142,11 +142,41 @@ export default function Home() {
   }, [user]);
 
   const games = [
-    { href: "/numeris",   name: "Numeris",   streak: numerisStreak,   key: "numeris",   isNew: false },
-    { href: "/lumis",     name: "Lumis",     streak: lumisStreak,     key: "lumis",     isNew: false },
-    { href: "/verba",     name: "Verba",     streak: verbaStreak,     key: "verba",     isNew: false },
-    { href: "/aquarum",   name: "Aquarum",   streak: aquarumStreak,   key: "aquarum",   isNew: false },
-    { href: "/compondus", name: "Compondus", streak: compondusStreak, key: "compondus", isNew: true  },
+    {
+      href: "/numeris",
+      name: "Numeris",
+      streak: numerisStreak,
+      key: "numeris",
+      isNew: false,
+    },
+    {
+      href: "/lumis",
+      name: "Lumis",
+      streak: lumisStreak,
+      key: "lumis",
+      isNew: false,
+    },
+    {
+      href: "/verba",
+      name: "Verba",
+      streak: verbaStreak,
+      key: "verba",
+      isNew: false,
+    },
+    {
+      href: "/aquarum",
+      name: "Aquarum",
+      streak: aquarumStreak,
+      key: "aquarum",
+      isNew: false,
+    },
+    {
+      href: "/compondus",
+      name: "Compondus",
+      streak: compondusStreak,
+      key: "compondus",
+      isNew: false,
+    },
   ];
 
   return (

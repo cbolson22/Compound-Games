@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 type TimeScoreRow  = { user_id: string; time_seconds: number; profiles: { username: string } | null };
-type PointScoreRow = { user_id: string; score: number;        profiles: { username: string } | null };
+type PointScoreRow = { user_id: string; score: number; solution: string[][] | null; profiles: { username: string } | null };
 type LowScoreRow   = { user_id: string; score: number;        profiles: { username: string } | null };
 
 async function getPuzzleId(game: string): Promise<string | null> {
@@ -42,7 +42,7 @@ async function getPointScores(game: string): Promise<PointScoreRow[]> {
   if (!puzzleId) return [];
   const { data } = await supabase
     .from("scores")
-    .select("user_id, score, profiles(username)")
+    .select("user_id, score, solution, profiles(username)")
     .eq("puzzle_id", puzzleId)
     .order("score", { ascending: false })
     .order("completed_at", { ascending: true });

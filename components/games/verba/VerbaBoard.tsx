@@ -7,7 +7,7 @@ import {
   pointerWithin,
   type DragEndEvent, type DragStartEvent,
 } from '@dnd-kit/core'
-import { useVerba, MAX_COL_HEIGHT, GAME_DURATION, type Grid, type VerbaSavedState } from './useVerba'
+import { useVerba, MAX_COL_HEIGHT, GAME_DURATION, WORD_COLORS, type Grid, type VerbaSavedState } from './useVerba'
 import type { VerbaPuzzle } from '@/lib/puzzles/verba'
 import { LETTER_VALUES } from '@/lib/scoring'
 import { fmtTime } from '@/lib/format'
@@ -16,14 +16,6 @@ import { useAuth } from '@/components/auth/AuthProvider'
 import { getUserStreak } from '@/lib/streaks'
 import styles from './verba.module.css'
 
-const WORD_COLORS = [
-  { bg: '#fef3c7', border: '#f59e0b', glow: '#fde68a', text: '#78350f' },
-  { bg: '#dbeafe', border: '#60a5fa', glow: '#bfdbfe', text: '#1e3a8a' },
-  { bg: '#f3e8ff', border: '#a855f7', glow: '#d8b4fe', text: '#581c87' },
-  { bg: '#ccfbf1', border: '#2dd4bf', glow: '#99f6e4', text: '#134e4a' },
-  { bg: '#ffe4e6', border: '#fb7185', glow: '#fecdd3', text: '#9f1239' },
-  { bg: '#ecfccb', border: '#86efac', glow: '#bbf7d0', text: '#14532d' },
-]
 
 function DraggableTile({ tileId, letter, available, selected, onSelect }: {
   tileId: number

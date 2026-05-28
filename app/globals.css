@@ -22,6 +22,15 @@ body {
   50%       { transform: rotate(-8deg) scale(1.1); }
 }
 
+@keyframes badgePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}
+
 .new-badge {
   animation: newBadgePop 2.4s ease-in-out infinite;
+}
+
+.badge-pulse {
+  animation: badgePulse 2.4s ease-in-out infinite;
 }
