@@ -119,6 +119,8 @@ function TutorialModal({
   );
 }
 
+const BADGES_IS_NEW = true;
+
 export default function Home() {
   const { user, profile, loading, signOut } = useAuth();
   const [numerisStreak, setNumerisStreak] = useState(0);
@@ -180,15 +182,15 @@ export default function Home() {
   ];
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8">
+    <main className="min-h-screen flex flex-col items-center p-8 pt-12">
       <h1 className="font-serif text-5xl mb-2">Compound Games</h1>
       <p className="text-xs uppercase tracking-widest text-[#ccc] mb-6">
         Daily Puzzles
       </p>
 
-      <div className="flex flex-col gap-4 w-full max-w-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
         {games.map((g) => (
-          <div key={g.key} className="relative">
+          <div key={g.key} className="relative h-full">
             {g.isNew && (
               <span className="new-badge absolute -top-2.5 -left-2 z-10 bg-violet-600 text-white text-[0.55rem] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full pointer-events-none select-none">
                 new game
@@ -196,7 +198,7 @@ export default function Home() {
             )}
             <Link
               href={g.href}
-              className="flex items-start justify-between gap-2 px-6 pt-4 pb-4 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors"
+              className="flex items-start justify-between gap-2 px-6 pt-4 pb-4 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors h-full"
             >
               <div className="flex flex-col gap-1">
                 <span className="font-serif text-2xl">{g.name}</span>
@@ -236,11 +238,28 @@ export default function Home() {
 
         <Link
           href="/leaderboard"
-          className="flex flex-col gap-1 p-6 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors"
+          className="flex flex-col gap-1 p-6 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors h-full"
         >
           <span className="font-serif text-2xl">Leaderboard</span>
           <span className="text-sm text-[#aaa]">Today&apos;s Rankings</span>
         </Link>
+
+        <div className="relative h-full">
+          {BADGES_IS_NEW && (
+            <span className="new-badge absolute -top-2.5 -left-2 z-10 bg-violet-600 text-white text-[0.55rem] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full pointer-events-none select-none">
+              new
+            </span>
+          )}
+          <Link
+            href="/profile"
+            className="flex flex-col gap-1 p-6 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors h-full"
+          >
+            <span className="font-serif text-2xl">My Badges</span>
+            <span className="text-sm text-[#aaa]">
+              Achievements &amp; profile
+            </span>
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6 text-sm text-[#aaa]">
