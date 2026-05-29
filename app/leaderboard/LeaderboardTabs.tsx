@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { fmtTime } from "@/lib/format";
-import { LETTER_VALUES } from "@/lib/scoring";
-import { getWordSet } from "@/lib/wordlist";
-import {
-  computeDetectedWords,
-  computeHighlightedCells,
-  WORD_COLORS,
-  MAX_COL_HEIGHT as VERBA_MAX_COL_HEIGHT,
-  type DetectedWord,
-} from "@/components/games/verba/useVerba";
+// To re-enable VerbaBoardModal, restore these imports:
+// import { useEffect, useMemo } from "react"; // (merge with the useState import above)
+// import { LETTER_VALUES } from "@/lib/scoring";
+// import { getWordSet } from "@/lib/wordlist";
+// import {
+//   computeDetectedWords,
+//   computeHighlightedCells,
+//   WORD_COLORS,
+//   MAX_COL_HEIGHT as VERBA_MAX_COL_HEIGHT,
+//   type DetectedWord,
+// } from "@/components/games/verba/useVerba";
 
+/* To re-enable board viewing, uncomment VerbaBoardModal:
 function VerbaBoardModal({
   grid,
   score,
@@ -27,7 +30,9 @@ function VerbaBoardModal({
   const columns = grid.length;
   const [wordSet, setWordSet] = useState<Set<string> | null>(null);
 
-  useEffect(() => { getWordSet().then(setWordSet); }, []);
+  useEffect(() => {
+    getWordSet().then(setWordSet);
+  }, []);
 
   const detectedWords: DetectedWord[] = useMemo(
     () => (wordSet ? computeDetectedWords(grid, columns, wordSet) : []),
@@ -74,53 +79,62 @@ function VerbaBoardModal({
                 key={colIdx}
                 style={{ display: "flex", flexDirection: "column", gap: "4px" }}
               >
-                {Array.from({ length: VERBA_MAX_COL_HEIGHT }, (_, visualRow) => {
-                  const dataRow = VERBA_MAX_COL_HEIGHT - 1 - visualRow;
-                  const letter = grid[colIdx]?.[dataRow];
-                  const wordIdx = letter
-                    ? highlightedCells.get(`${colIdx},${dataRow}`)
-                    : undefined;
-                  const color =
-                    wordIdx !== undefined
-                      ? WORD_COLORS[wordIdx % WORD_COLORS.length]
-                      : null;
-                  return (
-                    <div
-                      key={visualRow}
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 8,
-                        border: `1.5px solid ${color ? color.border : letter ? "#cbd5e1" : "#f0f0f0"}`,
-                        background: color ? color.bg : letter ? "#f8fafc" : "#fafafa",
-                        boxShadow: color ? `0 0 10px ${color.glow}` : undefined,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "0.9rem",
-                        fontWeight: 700,
-                        color: color ? color.text : "#1a1a1a",
-                        position: "relative",
-                      }}
-                    >
-                      {letter ?? ""}
-                      {letter && (
-                        <span
-                          style={{
-                            fontSize: "0.5rem",
-                            color: color ? color.border : "#94a3b8",
-                            position: "absolute",
-                            bottom: 2,
-                            right: 4,
-                          }}
-                        >
-                          {LETTER_VALUES[letter] ?? 1}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
+                {Array.from(
+                  { length: VERBA_MAX_COL_HEIGHT },
+                  (_, visualRow) => {
+                    const dataRow = VERBA_MAX_COL_HEIGHT - 1 - visualRow;
+                    const letter = grid[colIdx]?.[dataRow];
+                    const wordIdx = letter
+                      ? highlightedCells.get(`${colIdx},${dataRow}`)
+                      : undefined;
+                    const color =
+                      wordIdx !== undefined
+                        ? WORD_COLORS[wordIdx % WORD_COLORS.length]
+                        : null;
+                    return (
+                      <div
+                        key={visualRow}
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 8,
+                          border: `1.5px solid ${color ? color.border : letter ? "#cbd5e1" : "#f0f0f0"}`,
+                          background: color
+                            ? color.bg
+                            : letter
+                              ? "#f8fafc"
+                              : "#fafafa",
+                          boxShadow: color
+                            ? `0 0 10px ${color.glow}`
+                            : undefined,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "0.9rem",
+                          fontWeight: 700,
+                          color: color ? color.text : "#1a1a1a",
+                          position: "relative",
+                        }}
+                      >
+                        {letter ?? ""}
+                        {letter && (
+                          <span
+                            style={{
+                              fontSize: "0.5rem",
+                              color: color ? color.border : "#94a3b8",
+                              position: "absolute",
+                              bottom: 2,
+                              right: 4,
+                            }}
+                          >
+                            {LETTER_VALUES[letter] ?? 1}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  },
+                )}
               </div>
             ))}
           </div>
@@ -151,6 +165,7 @@ function VerbaBoardModal({
     </div>
   );
 }
+*/
 
 type TimeScoreRow = {
   user_id: string;
@@ -288,11 +303,12 @@ function PointList({
   streaks: Record<string, number>;
   userId?: string;
 }) {
-  const [viewing, setViewing] = useState<{
-    grid: string[][];
-    score: number;
-    username: string;
-  } | null>(null);
+  // To re-enable board viewing: uncomment this state, the onClick wrapper in the map, and the modal below
+  // const [viewing, setViewing] = useState<{
+  //   grid: string[][];
+  //   score: number;
+  //   username: string;
+  // } | null>(null);
 
   if (!scores.length)
     return <p className="text-sm text-[#aaa]">No plays yet today.</p>;
@@ -300,29 +316,37 @@ function PointList({
   return (
     <>
       <div className="w-full flex flex-col gap-2">
-        {scores.map((s, i) => (
-          <div
-            key={i}
-            onClick={() =>
-              s.solution &&
-              setViewing({
-                grid: s.solution,
-                score: s.score,
-                username: s.profiles?.username ?? "—",
-              })
-            }
-            className={s.solution ? "cursor-pointer" : ""}
-          >
+        {scores.map((s, i) => {
+          // To re-enable clicking to view board, replace the return below with:
+          // return (
+          //   <div
+          //     key={i}
+          //     onClick={() =>
+          //       s.solution &&
+          //       setViewing({
+          //         grid: s.solution,
+          //         score: s.score,
+          //         username: s.profiles?.username ?? "—",
+          //       })
+          //     }
+          //     className={s.solution ? "cursor-pointer" : ""}
+          //   >
+          //     <ScoreRow ... />
+          //   </div>
+          // );
+          return (
             <ScoreRow
+              key={i}
               rank={ranks[i]}
               username={s.profiles?.username ?? "—"}
               streak={streaks[s.user_id] ?? 0}
               value={`${s.score} pts`}
               isMe={s.user_id === userId}
             />
-          </div>
-        ))}
+          );
+        })}
       </div>
+      {/* To re-enable board modal, uncomment:
       {viewing && (
         <VerbaBoardModal
           grid={viewing.grid}
@@ -331,6 +355,7 @@ function PointList({
           onClose={() => setViewing(null)}
         />
       )}
+      */}
     </>
   );
 }
@@ -376,7 +401,7 @@ function LowScoreList({
 const TABS: { id: Tab; label: string; isNew?: boolean }[] = [
   { id: "numeris", label: "Numeris" },
   { id: "lumis", label: "Lumis" },
-  { id: "verba", label: "Verba", isNew: true },
+  { id: "verba", label: "Verba" },
   { id: "aquarum", label: "Aquarum" },
   { id: "compondus", label: "Compondus" },
 ];
@@ -436,9 +461,11 @@ export default function LeaderboardTabs({
       )}
       {tab === "verba" && (
         <div className="w-full flex flex-col gap-3">
+          {/* To re-enable tap-to-view banner, uncomment:
           <p className="badge-pulse text-xs text-center font-bold tracking-widest uppercase px-3 py-1.5 rounded-full bg-violet-600 text-white self-center">
             Tap a user&apos;s score to see their board
           </p>
+          */}
           <PointList
             scores={verbaScores}
             streaks={verbaStreaks}
