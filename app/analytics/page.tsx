@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getTodaysCT } from "@/lib/dates";
 import AnalyticsChart, { type DailyData } from "./AnalyticsChart";
@@ -65,7 +66,16 @@ export default async function AnalyticsPage() {
   };
 
   return (
-    <main className="min-h-screen p-8 max-w-4xl mx-auto">
+    <main className="min-h-screen">
+      <nav className="px-5 pt-5 w-full">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#555] border border-[#e8e8e8] rounded-full px-4 py-1.5 bg-white hover:border-[#bbb] hover:text-[#1a1a1a] transition-all"
+        >
+          ← Home
+        </Link>
+      </nav>
+      <div className="p-8 max-w-4xl mx-auto">
       <h1 className="font-serif text-4xl mb-1">Analytics</h1>
       <p className="text-sm text-[#aaa] mb-8">Daily unique players per game</p>
 
@@ -81,6 +91,7 @@ export default async function AnalyticsPage() {
             <p className="text-xs text-[#aaa] mt-0.5">total plays</p>
           </div>
         ))}
+      </div>
       </div>
     </main>
   );

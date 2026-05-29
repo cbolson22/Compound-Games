@@ -43,5 +43,12 @@ export function generateVerba(): VerbaPuzzle {
     if (idx !== -1) letters[idx] = pick(vowels)
   }
 
+  // Q is unplayable without U — guarantee a U is present whenever Q is drawn
+  if (letters.includes('Q') && !letters.includes('U')) {
+    const idx = letters.findIndex(l => !vowels.includes(l) && l !== 'Q')
+    if (idx !== -1) letters[idx] = 'U'
+    else letters[letters.indexOf('Q')] = 'U' // fallback: swap Q itself if no consonant available
+  }
+
   return { columns, letters: shuffle(letters) }
 }

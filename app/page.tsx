@@ -184,9 +184,15 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center p-8 pt-12">
       <h1 className="font-serif text-5xl mb-2">Compound Games</h1>
-      <p className="text-xs uppercase tracking-widest text-[#ccc] mb-6">
+      <p className="text-xs uppercase tracking-widest text-[#ccc]">
         Daily Puzzles
       </p>
+      <Link
+        href="/analytics"
+        className="text-[0.65rem] text-[#ddd] hover:text-[#aaa] transition-colors mb-6"
+      >
+        site analytics
+      </Link>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
         {games.map((g) => (
