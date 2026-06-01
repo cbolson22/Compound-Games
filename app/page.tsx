@@ -185,8 +185,13 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center p-8 pt-12">
       <h1 className="font-serif text-5xl mb-2">Compound Games</h1>
-      <p className="text-xs uppercase tracking-widest text-[#ccc]">
-        Daily Puzzles
+      <p className="text-xl text-[#555] mb-1">
+        {new Date().toLocaleDateString("en-US", {
+          timeZone: "America/Chicago",
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        })}
       </p>
       <Link
         href="/analytics"
