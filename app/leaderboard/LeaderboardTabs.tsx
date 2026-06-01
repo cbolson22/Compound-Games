@@ -1,21 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { supabase } from "@/lib/supabase";
 import { fmtTime } from "@/lib/format";
-// To re-enable VerbaBoardModal, restore these imports:
-// import { useEffect, useMemo } from "react"; // (merge with the useState import above)
-// import { LETTER_VALUES } from "@/lib/scoring";
-// import { getWordSet } from "@/lib/wordlist";
-// import {
-//   computeDetectedWords,
-//   computeHighlightedCells,
-//   WORD_COLORS,
-//   MAX_COL_HEIGHT as VERBA_MAX_COL_HEIGHT,
-//   type DetectedWord,
-// } from "@/components/games/verba/useVerba";
+import { LETTER_VALUES } from "@/lib/scoring";
+import { getWordSet } from "@/lib/wordlist";
+import {
+  computeDetectedWords,
+  computeHighlightedCells,
+  WORD_COLORS,
+  MAX_COL_HEIGHT as VERBA_MAX_COL_HEIGHT,
+  type DetectedWord,
+} from "@/components/games/verba/useVerba";
 
-/* To re-enable board viewing, uncomment VerbaBoardModal:
 function VerbaBoardModal({
   grid,
   score,
@@ -165,7 +163,6 @@ function VerbaBoardModal({
     </div>
   );
 }
-*/
 
 type TimeScoreRow = {
   user_id: string;
@@ -176,7 +173,7 @@ type PointScoreRow = {
   user_id: string;
   score: number;
   solution: string[][] | null;
-  profiles: { username: string } | null;
+  profiles: { username: string; show_verba_board: boolean } | null;
 };
 
 // Olympic-style: same metric value = same rank; next distinct value jumps to current index
@@ -303,12 +300,11 @@ function PointList({
   streaks: Record<string, number>;
   userId?: string;
 }) {
-  // To re-enable board viewing: uncomment this state, the onClick wrapper in the map, and the modal below
-  // const [viewing, setViewing] = useState<{
-  //   grid: string[][];
-  //   score: number;
-  //   username: string;
-  // } | null>(null);
+  const [viewing, setViewing] = useState<{
+    grid: string[][];
+    score: number;
+    username: string;
+  } | null>(null);
 
   if (!scores.length)
     return <p className="text-sm text-[#aaa]">No plays yet today.</p>;
@@ -317,36 +313,31 @@ function PointList({
     <>
       <div className="w-full flex flex-col gap-2">
         {scores.map((s, i) => {
-          // To re-enable clicking to view board, replace the return below with:
-          // return (
-          //   <div
-          //     key={i}
-          //     onClick={() =>
-          //       s.solution &&
-          //       setViewing({
-          //         grid: s.solution,
-          //         score: s.score,
-          //         username: s.profiles?.username ?? "—",
-          //       })
-          //     }
-          //     className={s.solution ? "cursor-pointer" : ""}
-          //   >
-          //     <ScoreRow ... />
-          //   </div>
-          // );
+          const canView = !!(s.solution && s.profiles?.show_verba_board);
           return (
-            <ScoreRow
+            <div
               key={i}
-              rank={ranks[i]}
-              username={s.profiles?.username ?? "—"}
-              streak={streaks[s.user_id] ?? 0}
-              value={`${s.score} pts`}
-              isMe={s.user_id === userId}
-            />
+              onClick={() =>
+                canView &&
+                setViewing({
+                  grid: s.solution!,
+                  score: s.score,
+                  username: s.profiles?.username ?? "—",
+                })
+              }
+              className={canView ? "cursor-pointer" : ""}
+            >
+              <ScoreRow
+                rank={ranks[i]}
+                username={s.profiles?.username ?? "—"}
+                streak={streaks[s.user_id] ?? 0}
+                value={`${s.score} pts`}
+                isMe={s.user_id === userId}
+              />
+            </div>
           );
         })}
       </div>
-      {/* To re-enable board modal, uncomment:
       {viewing && (
         <VerbaBoardModal
           grid={viewing.grid}
@@ -355,7 +346,6 @@ function PointList({
           onClose={() => setViewing(null)}
         />
       )}
-      */}
     </>
   );
 }
@@ -398,7 +388,7 @@ function LowScoreList({
   );
 }
 
-const TABS: { id: Tab; label: string; isNew?: boolean }[] = [
+const TABS: { id: Tab; label: string }[] = [
   { id: "numeris", label: "Numeris" },
   { id: "lumis", label: "Lumis" },
   { id: "verba", label: "Verba" },
@@ -420,17 +410,33 @@ export default function LeaderboardTabs({
 }: LeaderboardData) {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("numeris");
+  const [showMyBoard, setShowMyBoard] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("show_verba_board")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => setShowMyBoard(data?.show_verba_board ?? false));
+  }, [user]);
+
+  async function toggleShowMyBoard() {
+    if (!user) return;
+    const next = !showMyBoard;
+    setShowMyBoard(next);
+    await supabase
+      .from("profiles")
+      .update({ show_verba_board: next })
+      .eq("id", user.id);
+  }
 
   return (
     <div className="w-full max-w-sm flex flex-col items-center gap-6">
       <div className="flex w-full bg-[#f5f5f5] p-1 rounded-xl gap-1">
         {TABS.map((t) => (
           <div key={t.id} className="relative flex-1">
-            {t.isNew && (
-              <span className="new-badge absolute -top-2.5 -left-1 z-10 bg-violet-600 text-white text-[0.5rem] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded-full pointer-events-none select-none">
-                new
-              </span>
-            )}
             <button
               onClick={() => setTab(t.id)}
               className={`w-full py-1.5 text-xs font-medium rounded-lg transition-all ${
@@ -461,11 +467,51 @@ export default function LeaderboardTabs({
       )}
       {tab === "verba" && (
         <div className="w-full flex flex-col gap-3">
-          {/* To re-enable tap-to-view banner, uncomment:
-          <p className="badge-pulse text-xs text-center font-bold tracking-widest uppercase px-3 py-1.5 rounded-full bg-violet-600 text-white self-center">
-            Tap a user&apos;s score to see their board
+          <p className="text-xs text-center font-bold tracking-widest uppercase px-3 py-1.5 rounded-full bg-violet-600 text-white self-center">
+            Tap any score to see a user&apos;s board if it&apos;s being shared
           </p>
-          */}
+          {user && (
+            <div className="flex items-center justify-between px-1">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs font-medium text-[#333]">
+                  Share my board
+                </span>
+                <span className="text-[0.65rem] text-[aaa]">
+                  Let others tap to view your grid
+                </span>
+              </div>
+              <button
+                role="switch"
+                aria-checked={showMyBoard}
+                onClick={toggleShowMyBoard}
+                style={{
+                  position: "relative",
+                  width: 40,
+                  height: 22,
+                  borderRadius: 11,
+                  background: showMyBoard ? "#7c3aed" : "#d1d5db",
+                  border: "none",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  transition: "background 0.2s",
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 3,
+                    left: showMyBoard ? 21 : 3,
+                    width: 16,
+                    height: 16,
+                    borderRadius: "50%",
+                    background: "#fff",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                    transition: "left 0.2s",
+                  }}
+                />
+              </button>
+            </div>
+          )}
           <PointList
             scores={verbaScores}
             streaks={verbaStreaks}
