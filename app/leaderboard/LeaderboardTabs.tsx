@@ -315,25 +315,31 @@ function PointList({
         {scores.map((s, i) => {
           const canView = !!(s.solution && s.profiles?.show_verba_board);
           return (
-            <div
-              key={i}
-              onClick={() =>
-                canView &&
-                setViewing({
-                  grid: s.solution!,
-                  score: s.score,
-                  username: s.profiles?.username ?? "—",
-                })
-              }
-              className={canView ? "cursor-pointer" : ""}
-            >
-              <ScoreRow
-                rank={ranks[i]}
-                username={s.profiles?.username ?? "—"}
-                streak={streaks[s.user_id] ?? 0}
-                value={`${s.score} pts`}
-                isMe={s.user_id === userId}
-              />
+            <div key={i} className="relative">
+              {canView && (
+                <span className="absolute -left-5 top-1/2 -translate-y-1/2 text-xs text-[#ccc]">
+                  👁
+                </span>
+              )}
+              <div
+                className={canView ? "cursor-pointer" : ""}
+                onClick={() =>
+                  canView &&
+                  setViewing({
+                    grid: s.solution!,
+                    score: s.score,
+                    username: s.profiles?.username ?? "—",
+                  })
+                }
+              >
+                <ScoreRow
+                  rank={ranks[i]}
+                  username={s.profiles?.username ?? "—"}
+                  streak={streaks[s.user_id] ?? 0}
+                  value={`${s.score} pts`}
+                  isMe={s.user_id === userId}
+                />
+              </div>
             </div>
           );
         })}
