@@ -291,20 +291,85 @@ function TimeList({
   );
 }
 
+function GateModal({
+  hasPlayed,
+  isSharing,
+  onClose,
+}: {
+  hasPlayed: boolean;
+  isSharing: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl p-6 w-full max-w-sm flex flex-col gap-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between">
+          <h2 className="font-serif text-xl">Unlock board viewing</h2>
+          <button
+            onClick={onClose}
+            className="text-[#aaa] hover:text-[#1a1a1a] text-lg leading-none mt-0.5"
+          >
+            ✕
+          </button>
+        </div>
+        <p className="text-sm text-[#555] leading-relaxed">
+          To view other players&apos; boards, you need to:
+        </p>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-base shrink-0" style={{ color: hasPlayed ? "#059669" : "#d1d5db" }}>
+              {hasPlayed ? "✓" : "○"}
+            </span>
+            <span className="text-sm" style={{ color: hasPlayed ? "#059669" : "#1a1a1a" }}>
+              Complete today&apos;s Verba
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-base shrink-0" style={{ color: isSharing ? "#059669" : "#d1d5db" }}>
+              {isSharing ? "✓" : "○"}
+            </span>
+            <span className="text-sm" style={{ color: isSharing ? "#059669" : "#1a1a1a" }}>
+              Share your board (toggle above)
+            </span>
+          </div>
+        </div>
+        <button
+          className="w-full py-3 rounded-full bg-[#1a1a1a] text-white text-sm font-medium hover:opacity-85 transition-opacity"
+          onClick={onClose}
+        >
+          Got it
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PointList({
   scores,
   streaks,
   userId,
+  hasPlayed,
+  isSharing,
 }: {
   scores: PointScoreRow[];
   streaks: Record<string, number>;
   userId?: string;
+  hasPlayed: boolean;
+  isSharing: boolean;
 }) {
   const [viewing, setViewing] = useState<{
     grid: string[][];
     score: number;
     username: string;
   } | null>(null);
+  const [showGate, setShowGate] = useState(false);
+  const canUnlock = hasPlayed && isSharing;
 
   if (!scores.length)
     return <p className="text-sm text-[#aaa]">No plays yet today.</p>;
@@ -323,14 +388,18 @@ function PointList({
               )}
               <div
                 className={canView ? "cursor-pointer" : ""}
-                onClick={() =>
-                  canView &&
-                  setViewing({
-                    grid: s.solution!,
-                    score: s.score,
-                    username: s.profiles?.username ?? "—",
-                  })
-                }
+                onClick={() => {
+                  if (!canView) return;
+                  if (canUnlock) {
+                    setViewing({
+                      grid: s.solution!,
+                      score: s.score,
+                      username: s.profiles?.username ?? "—",
+                    });
+                  } else {
+                    setShowGate(true);
+                  }
+                }}
               >
                 <ScoreRow
                   rank={ranks[i]}
@@ -350,6 +419,13 @@ function PointList({
           score={viewing.score}
           username={viewing.username}
           onClose={() => setViewing(null)}
+        />
+      )}
+      {showGate && (
+        <GateModal
+          hasPlayed={hasPlayed}
+          isSharing={isSharing}
+          onClose={() => setShowGate(false)}
         />
       )}
     </>
@@ -417,6 +493,7 @@ export default function LeaderboardTabs({
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("numeris");
   const [showMyBoard, setShowMyBoard] = useState(false);
+  const hasPlayedVerba = verbaScores.some((s) => s.user_id === user?.id);
 
   useEffect(() => {
     if (!user) return;
@@ -473,19 +550,14 @@ export default function LeaderboardTabs({
       )}
       {tab === "verba" && (
         <div className="w-full flex flex-col gap-3">
-          <p className="text-xs text-center font-bold tracking-widest uppercase px-3 py-1.5 rounded-full bg-violet-600 text-white self-center">
-            Tap any score to see a user&apos;s board if it&apos;s being shared
+          <p className="text-xs text-center text-[#bbb]">
+            Tap a score with 👁️ to see the player&apos;s board
           </p>
           {user && (
             <div className="flex items-center justify-between px-1">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs font-medium text-[#333]">
-                  Share my board
-                </span>
-                <span className="text-[0.65rem] text-[aaa]">
-                  Let others tap to view your grid
-                </span>
-              </div>
+              <span className="text-xs font-medium text-[#333]">
+                Share my board
+              </span>
               <button
                 role="switch"
                 aria-checked={showMyBoard}
@@ -522,6 +594,8 @@ export default function LeaderboardTabs({
             scores={verbaScores}
             streaks={verbaStreaks}
             userId={user?.id}
+            hasPlayed={hasPlayedVerba}
+            isSharing={showMyBoard}
           />
         </div>
       )}
