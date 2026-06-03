@@ -6,6 +6,7 @@ import { generateLumis } from "@/lib/puzzles/lumis";
 import { generateVerba } from "@/lib/puzzles/verba";
 import { generateAquarum } from "@/lib/puzzles/aquarum";
 import { generateCompondus, type CompondusPuzzle } from "@/lib/puzzles/compondus";
+import { generateLoopa } from "@/lib/puzzles/loopa";
 import { awardMedalsForDate } from "@/lib/medals";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
   const puzzleDate = dateParam ?? getTomorrowCT();
 
   const gameFilter = url.searchParams.get("game");
-  const VALID_GAMES = ["numeris", "lumis", "verba", "aquarum", "compondus"];
+  const VALID_GAMES = ["numeris", "lumis", "verba", "aquarum", "compondus", "loopa"];
   if (gameFilter && !VALID_GAMES.includes(gameFilter)) {
     return NextResponse.json({ error: "Invalid game" }, { status: 400 });
   }
@@ -60,6 +61,7 @@ export async function GET(request: Request) {
     { game: "verba", puzzle_data: generateVerba() },
     { game: "aquarum", puzzle_data: generateAquarum() },
     { game: "compondus", puzzle_data: generateCompondus(recentWords) },
+    { game: "loopa", puzzle_data: generateLoopa() },
   ];
   const puzzles = gameFilter ? all.filter((p) => p.game === gameFilter) : all;
 

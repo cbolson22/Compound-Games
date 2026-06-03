@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-const GAMES = ['numeris', 'lumis', 'verba', 'aquarum', 'compondus'] as const
+const GAMES = ['numeris', 'lumis', 'verba', 'aquarum', 'compondus', 'loopa'] as const
 type Game = typeof GAMES[number]
 type MedalType = 'gold' | 'silver' | 'bronze'
 

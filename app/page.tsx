@@ -13,7 +13,7 @@ async function fetchPlayedGames(userId: string): Promise<Set<string>> {
     .from("daily_puzzles")
     .select("id, game")
     .eq("puzzle_date", getTodaysCT())
-    .in("game", ["numeris", "lumis", "verba", "aquarum", "compondus"]);
+    .in("game", ["numeris", "lumis", "verba", "aquarum", "compondus", "loopa"]);
   if (!puzzles?.length) return new Set();
 
   const { data: scores } = await supabase
@@ -78,6 +78,10 @@ const TUTORIAL_CONTENT: Record<string, { title: string; body: string }> = {
     title: "How to play Compondus",
     body: "You are shown two words — the top and bottom of a chain. Fill in the missing words in between so that each consecutive pair forms a compound word or phrase (e.g. FIRE → TRUCK → LOAD). The first letter of each hidden word is revealed as a hint. Wrong guesses reveal the next letter. Your score is your total number of wrong guesses — lower is better.",
   },
+  loopa: {
+    title: "How to play Loopa",
+    body: "Draw a single closed loop through the dots of the grid. Click the lines between dots to toggle them on or off. Numbers inside squares show exactly how many of that square's four sides must be part of the loop. Complete the loop when all clues are satisfied.",
+  },
 };
 
 function TutorialModal({
@@ -126,6 +130,7 @@ export default function Home() {
   const [verbaStreak, setVerbaStreak] = useState(0);
   const [aquarumStreak, setAquarumStreak] = useState(0);
   const [compondusStreak, setCompondusStreak] = useState(0);
+  const [loopaStreak, setLoopaStreak] = useState(0);
   const [playedGames, setPlayedGames] = useState<Set<string> | null>(null);
   const [medals, setMedals] = useState<AllMedalCounts | null>(null);
   const [activeTutorial, setActiveTutorial] = useState<string | null>(null);
@@ -137,6 +142,7 @@ export default function Home() {
     getUserStreak(user.id, "verba").then(setVerbaStreak);
     getUserStreak(user.id, "aquarum").then(setAquarumStreak);
     getUserStreak(user.id, "compondus").then(setCompondusStreak);
+    getUserStreak(user.id, "loopa").then(setLoopaStreak);
     fetchPlayedGames(user.id).then(setPlayedGames);
     getMedalCounts(user.id).then(setMedals);
   }, [user]);
@@ -177,6 +183,14 @@ export default function Home() {
       key: "compondus",
       isNew: false,
     },
+    {
+      href: "/loopa",
+      name: "Loopa",
+      streak: loopaStreak,
+      key: "loopa",
+      isNew: true,
+      hidden: true,
+    },
   ];
 
   return (
@@ -198,7 +212,7 @@ export default function Home() {
       </Link>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
-        {games.map((g) => (
+        {games.filter((g) => !g.hidden).map((g) => (
           <div key={g.key} className="relative h-full">
             {g.isNew && (
               <span className="new-badge absolute -top-2.5 -left-2 z-10 bg-violet-600 text-white text-[0.55rem] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full pointer-events-none select-none">
@@ -212,7 +226,8 @@ export default function Home() {
               <div className="flex flex-col gap-1">
                 <span className="font-serif text-2xl">{g.name}</span>
                 <button
-                  className="text-xs font-medium text-[#555] border border-[#ddd] rounded-full px-2.5 py-0.5 hover:border-[#aaa] hover:text-[#1a1a1a] transition-all w-fit"
+                  className="text-xs font-medium rounded-full px-2.5 py-0.5 transition-all w-fit"
+                  style={g.key === "loopa" ? { border: "2.5px solid #7c3aed", color: "#7c3aed", fontWeight: 700 } : { border: "1px solid #ddd", color: "#555" }}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();

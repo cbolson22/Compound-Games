@@ -213,14 +213,16 @@ export type LeaderboardData = {
   verbaScores: PointScoreRow[];
   aquarumScores: TimeScoreRow[];
   compondusScores: LowScoreRow[];
+  loopaScores: TimeScoreRow[];
   numerisStreaks: Record<string, number>;
   lumisStreaks: Record<string, number>;
   verbaStreaks: Record<string, number>;
   aquarumStreaks: Record<string, number>;
   compondusStreaks: Record<string, number>;
+  loopaStreaks: Record<string, number>;
 };
 
-type Tab = "numeris" | "lumis" | "verba" | "aquarum" | "compondus";
+type Tab = "numeris" | "lumis" | "verba" | "aquarum" | "compondus" | "loopa";
 
 const MEDAL_BG = ["#fffbeb", "#f8fafc", "#fef3e8"];
 const MEDAL_BORDER = ["#d97706", "#94a3b8", "#b45309"];
@@ -476,6 +478,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "verba", label: "Verba" },
   { id: "aquarum", label: "Aquarum" },
   { id: "compondus", label: "Compondus" },
+  { id: "loopa", label: "Loopa" },
 ];
 
 export default function LeaderboardTabs({
@@ -484,11 +487,13 @@ export default function LeaderboardTabs({
   verbaScores,
   aquarumScores,
   compondusScores,
+  loopaScores,
   numerisStreaks,
   lumisStreaks,
   verbaStreaks,
   aquarumStreaks,
   compondusStreaks,
+  loopaStreaks,
 }: LeaderboardData) {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("numeris");
@@ -610,6 +615,13 @@ export default function LeaderboardTabs({
         <LowScoreList
           scores={compondusScores}
           streaks={compondusStreaks}
+          userId={user?.id}
+        />
+      )}
+      {tab === "loopa" && (
+        <TimeList
+          scores={loopaScores}
+          streaks={loopaStreaks}
           userId={user?.id}
         />
       )}

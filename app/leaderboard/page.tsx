@@ -62,21 +62,23 @@ async function getLowScores(game: string): Promise<LowScoreRow[]> {
 }
 
 export default async function LeaderboardPage() {
-  const [numerisScores, lumisScores, verbaScores, aquarumScores, compondusScores] = await Promise.all([
+  const [numerisScores, lumisScores, verbaScores, aquarumScores, compondusScores, loopaScores] = await Promise.all([
     getTimeScores('numeris'),
     getTimeScores('lumis'),
     getPointScores('verba'),
     getTimeScores('aquarum'),
     getLowScores('compondus'),
+    getTimeScores('loopa'),
   ]);
 
-  const allUserIds = [...new Set([...numerisScores, ...lumisScores, ...verbaScores, ...aquarumScores, ...compondusScores].map(s => s.user_id))];
-  const [numerisStreaks, lumisStreaks, verbaStreaks, aquarumStreaks, compondusStreaks] = await Promise.all([
+  const allUserIds = [...new Set([...numerisScores, ...lumisScores, ...verbaScores, ...aquarumScores, ...compondusScores, ...loopaScores].map(s => s.user_id))];
+  const [numerisStreaks, lumisStreaks, verbaStreaks, aquarumStreaks, compondusStreaks, loopaStreaks] = await Promise.all([
     getStreaksForUsers(allUserIds, 'numeris'),
     getStreaksForUsers(allUserIds, 'lumis'),
     getStreaksForUsers(allUserIds, 'verba'),
     getStreaksForUsers(allUserIds, 'aquarum'),
     getStreaksForUsers(allUserIds, 'compondus'),
+    getStreaksForUsers(allUserIds, 'loopa'),
   ]);
 
   return (
@@ -98,11 +100,13 @@ export default async function LeaderboardPage() {
         verbaScores={verbaScores}
         aquarumScores={aquarumScores}
         compondusScores={compondusScores}
+        loopaScores={loopaScores}
         numerisStreaks={numerisStreaks}
         lumisStreaks={lumisStreaks}
         verbaStreaks={verbaStreaks}
         aquarumStreaks={aquarumStreaks}
         compondusStreaks={compondusStreaks}
+        loopaStreaks={loopaStreaks}
       />
     </main>
   );

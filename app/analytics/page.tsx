@@ -5,7 +5,7 @@ import AnalyticsChart, { type DailyData } from "./AnalyticsChart";
 
 export const dynamic = "force-dynamic";
 
-const GAMES = ["numeris", "lumis", "verba", "aquarum", "compondus"] as const;
+const GAMES = ["numeris", "lumis", "verba", "aquarum", "compondus", "loopa"] as const;
 
 async function getDailyPlayers(): Promise<DailyData[]> {
   const { data: puzzles } = await supabase
@@ -49,6 +49,7 @@ async function getDailyPlayers(): Promise<DailyData[]> {
       verba:     dayGames.verba?.size     ?? 0,
       aquarum:   dayGames.aquarum?.size   ?? 0,
       compondus: dayGames.compondus?.size ?? 0,
+      loopa:     dayGames.loopa?.size     ?? 0,
       total: uniqueTotal,
     };
   });
@@ -63,6 +64,7 @@ export default async function AnalyticsPage() {
     verba:     data.reduce((s, d) => s + d.verba,     0),
     aquarum:   data.reduce((s, d) => s + d.aquarum,   0),
     compondus: data.reduce((s, d) => s + d.compondus, 0),
+    loopa:     data.reduce((s, d) => s + d.loopa,     0),
   };
 
   return (
