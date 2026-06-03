@@ -181,8 +181,8 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center p-8 pt-12">
-      <h1 className="font-serif text-5xl mb-2">Compound Games</h1>
-      <p className="text-xl text-[#555] mb-1">
+      <h1 className="font-serif text-5xl mb-2 text-center">Compound Games</h1>
+      <p className="text-xl text-[#555] mb-1 text-center">
         {new Date().toLocaleDateString("en-US", {
           timeZone: "America/Chicago",
           weekday: "long",

@@ -230,7 +230,7 @@ export default function LoopaPage() {
 
       <div className="flex flex-col items-center gap-1">
         <h1 className="font-serif text-5xl">Loopa</h1>
-        <p className="text-sm text-[#aaa]">
+        <p className="text-sm text-[#aaa] text-center">
           Draw one closed loop — numbers show how many sides it uses
         </p>
       </div>
