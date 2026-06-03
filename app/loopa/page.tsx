@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 
 const N = 5;
-const CELL_SIZE = 60;
-const EDGE_SIZE = 36; // larger = easier to click
 
 type EdgeKey = string;
 const hKey = (r: number, c: number): EdgeKey => `h${r},${c}`;
@@ -16,12 +14,11 @@ const CLUE_COLORS: Record<number, string> = {
   0: "#d1d5db",
   1: "#60a5fa",
   2: "#34d399",
-  3: "#f97316",
+  3: "#a855f7",
 };
 
 const EDGE_ACTIVE = "#6366f1";
 const EDGE_HOVER = "#a5b4fc";
-const EDGE_OFF = "#e2e8f0";
 const DOT_DEFAULT = "#94a3b8";
 const DOT_ACTIVE = "#6366f1";
 
@@ -165,10 +162,22 @@ export default function LoopaPage() {
   const [edges, setEdges] = useState<Set<EdgeKey>>(new Set());
   const [hovered, setHovered] = useState<EdgeKey | null>(null);
   const [time, setTime] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(600);
 
   useEffect(() => {
     setClues(generatePuzzle()); // eslint-disable-line
   }, []);
+
+  useEffect(() => {
+    const update = () => setViewportWidth(window.innerWidth);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // Scale grid to fit viewport with generous touch targets
+  const edgeSize = Math.max(20, Math.min(36, Math.floor((Math.min(viewportWidth, 480) - 32) / 16)));
+  const cellSize = edgeSize * 2;
 
   const solved = useMemo(() => {
     if (!clues || edges.size === 0) return false;
@@ -200,19 +209,17 @@ export default function LoopaPage() {
   );
 
   const reset = useCallback(() => {
-    setClues(null);
     setEdges(new Set());
     setTime(0);
-    setTimeout(() => setClues(generatePuzzle()), 0);
   }, []);
 
   const gridTemplate = Array.from({ length: 2 * N + 1 }, (_, i) =>
-    i % 2 === 0 ? `${EDGE_SIZE}px` : `${CELL_SIZE}px`,
+    i % 2 === 0 ? `${edgeSize}px` : `${cellSize}px`,
   ).join(" ");
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8 gap-8">
-      <nav className="absolute top-0 left-0 px-5 pt-5">
+    <main className="min-h-screen flex flex-col items-center p-4 sm:p-8 gap-3 sm:gap-4">
+      <nav className="pt-1 w-full">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#555] border border-[#e8e8e8] rounded-full px-4 py-1.5 bg-white hover:border-[#bbb] hover:text-[#1a1a1a] transition-all"
@@ -228,13 +235,19 @@ export default function LoopaPage() {
         </p>
       </div>
 
-      <div className="font-mono text-2xl">{fmtTime(time)}</div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "#ccc", fontWeight: 500, marginBottom: 2 }}>Time</div>
+        <div style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 36, fontWeight: 500, color: solved ? "#1d9e75" : "#1a1a1a", letterSpacing: 2, transition: "color 0.3s" }}>{fmtTime(time)}</div>
+      </div>
 
+      <style>{`@keyframes loopa-fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }`}</style>
+
+      <div style={{ display: "flex", flexDirection: solved && viewportWidth >= 720 ? "row" : "column", alignItems: solved && viewportWidth >= 720 ? "center" : "center", gap: "2.5rem", justifyContent: "center" }}>
       {!clues && (
         <div
           style={{
-            width: (CELL_SIZE + EDGE_SIZE) * N + EDGE_SIZE + 24,
-            height: (CELL_SIZE + EDGE_SIZE) * N + EDGE_SIZE + 24,
+            width: (cellSize + edgeSize) * N + edgeSize + 24,
+            height: (cellSize + edgeSize) * N + edgeSize + 24,
             borderRadius: 16,
             background: "#f8fafc",
           }}
@@ -275,8 +288,8 @@ export default function LoopaPage() {
                 >
                   <div
                     style={{
-                      width: lit ? 10 : 8,
-                      height: lit ? 10 : 8,
+                      width: lit ? edgeSize * 0.42 : edgeSize * 0.32,
+                      height: lit ? edgeSize * 0.42 : edgeSize * 0.32,
                       borderRadius: "50%",
                       background: lit ? DOT_ACTIVE : DOT_DEFAULT,
                       transition: "all 0.15s",
@@ -300,25 +313,28 @@ export default function LoopaPage() {
                   onMouseEnter={() => setHovered(key)}
                   onMouseLeave={() => setHovered(null)}
                   style={{
-                    background: "transparent",
+                    background: hover && !active ? "#eef2ff" : "transparent",
                     border: "none",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    padding: 0,
+                    padding: "0 4px",
+                    borderRadius: 99,
+                    transition: "background 0.1s",
                   }}
                 >
                   <div
                     style={{
                       width: "100%",
-                      height: active ? 6 : hover ? 4 : 3,
+                      height: active ? 6 : hover ? 5 : 3,
                       borderRadius: 99,
-                      background: active
-                        ? EDGE_ACTIVE
+                      background: "transparent",
+                      backgroundImage: active
+                        ? `linear-gradient(${EDGE_ACTIVE}, ${EDGE_ACTIVE})`
                         : hover
-                          ? EDGE_HOVER
-                          : EDGE_OFF,
+                          ? `linear-gradient(${EDGE_HOVER}, ${EDGE_HOVER})`
+                          : "repeating-linear-gradient(to right, #c7d2fe 0, #c7d2fe 5px, transparent 5px, transparent 10px)",
                       boxShadow: active ? `0 0 8px ${EDGE_ACTIVE}88` : "none",
                       transition: "all 0.1s",
                     }}
@@ -341,25 +357,28 @@ export default function LoopaPage() {
                   onMouseEnter={() => setHovered(key)}
                   onMouseLeave={() => setHovered(null)}
                   style={{
-                    background: "transparent",
+                    background: hover && !active ? "#eef2ff" : "transparent",
                     border: "none",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    padding: 0,
+                    padding: "4px 0",
+                    borderRadius: 99,
+                    transition: "background 0.1s",
                   }}
                 >
                   <div
                     style={{
                       height: "100%",
-                      width: active ? 6 : hover ? 4 : 3,
+                      width: active ? 6 : hover ? 5 : 3,
                       borderRadius: 99,
-                      background: active
-                        ? EDGE_ACTIVE
+                      background: "transparent",
+                      backgroundImage: active
+                        ? `linear-gradient(${EDGE_ACTIVE}, ${EDGE_ACTIVE})`
                         : hover
-                          ? EDGE_HOVER
-                          : EDGE_OFF,
+                          ? `linear-gradient(${EDGE_HOVER}, ${EDGE_HOVER})`
+                          : "repeating-linear-gradient(to bottom, #c7d2fe 0, #c7d2fe 5px, transparent 5px, transparent 10px)",
                       boxShadow: active ? `0 0 8px ${EDGE_ACTIVE}88` : "none",
                       transition: "all 0.1s",
                     }}
@@ -379,7 +398,7 @@ export default function LoopaPage() {
             const CLUE_BG: Record<number, string> = {
               1: "#dbeafe",
               2: "#d1fae5",
-              3: "#ffedd5",
+              3: "#f3e8ff",
             };
 
             return (
@@ -394,13 +413,13 @@ export default function LoopaPage() {
                 {clue > 0 && (
                   <div
                     style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
+                      width: cellSize * 0.55,
+                      height: cellSize * 0.55,
+                      borderRadius: cellSize * 0.14,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "1.1rem",
+                      fontSize: `${Math.max(11, cellSize * 0.32)}px`,
                       fontWeight: 700,
                       background: over
                         ? "#fee2e2"
@@ -429,23 +448,20 @@ export default function LoopaPage() {
         </div>
       )}
 
-      {solved ? (
-        <div className="flex flex-col items-center gap-3">
-          <p className="font-serif text-2xl">Loop complete!</p>
-          <p className="text-sm text-[#aaa]">{fmtTime(time)}</p>
-          <button
-            onClick={reset}
-            className="px-6 py-2.5 rounded-full bg-[#1a1a1a] text-white text-sm font-medium hover:opacity-85 transition-opacity"
-          >
-            New puzzle
-          </button>
+      {solved && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, animation: "loopa-fadeUp 0.4s ease" }}>
+          <p style={{ fontFamily: "var(--font-dm-serif), serif", fontSize: 28, color: "#1d9e75" }}>Loop complete!</p>
+          <p style={{ fontFamily: "var(--font-dm-mono), monospace", fontSize: 13, color: "#aaa" }}>{fmtTime(time)}</p>
         </div>
-      ) : (
+      )}
+      </div>
+
+      {!solved && (
         <button
           onClick={reset}
           className="px-6 py-2.5 rounded-full border border-[#ddd] text-sm font-medium text-[#555] hover:border-[#aaa] hover:text-[#1a1a1a] transition-all"
         >
-          New puzzle
+          Reset board
         </button>
       )}
     </main>
