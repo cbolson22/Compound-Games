@@ -22,3 +22,15 @@ export function nDaysBefore(n: number, dateStr: string): string {
   for (let i = 0; i < n; i++) d = dayBefore(d)
   return d
 }
+
+export function dayAfter(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
+}
+
+export function nDaysAfter(n: number, dateStr: string): string {
+  let d = dateStr
+  for (let i = 0; i < n; i++) d = dayAfter(d)
+  return d
+}

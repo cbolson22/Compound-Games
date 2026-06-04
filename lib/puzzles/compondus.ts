@@ -5,13 +5,16 @@ export type CompondusPuzzle = {
   chain: string[]  // Uppercase words; first and last are shown, middle are hidden
 }
 
+const PAIRS: [string, string][] = JSON.parse(
+  fs.readFileSync(path.join(process.cwd(), 'public/compounds.json'), 'utf8')
+).pairs
+
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
 export function generateCompondus(excludeWords: string[] = []): CompondusPuzzle {
-  const raw = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'public/compounds.json'), 'utf8'))
-  const pairs: [string, string][] = raw.pairs
+  const pairs = PAIRS
 
   const graph = new Map<string, string[]>()
   for (const [a, b] of pairs) {

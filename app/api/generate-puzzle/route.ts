@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { getTodaysCT, getTomorrowCT, nDaysBefore } from "@/lib/dates";
+import { getTodaysCT, nDaysBefore, nDaysAfter } from "@/lib/dates";
 import { generateNumeris } from "@/lib/puzzles/numeris";
 import { generateLumis } from "@/lib/puzzles/lumis";
 import { generateVerba } from "@/lib/puzzles/verba";
@@ -37,7 +37,6 @@ export async function GET(request: Request) {
   if (dateParam && !DATE_RE.test(dateParam)) {
     return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
   }
-  const puzzleDate = dateParam ?? getTomorrowCT();
 
   const gameFilter = url.searchParams.get("game");
   const VALID_GAMES = ["numeris", "lumis", "verba", "aquarum", "compondus", "loopa"];
@@ -45,8 +44,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Invalid game" }, { status: 400 });
   }
 
+  // When called manually with ?date=, seed just that date. Otherwise seed the next 7 days.
+  const today = getTodaysCT();
+  const dates = dateParam
+    ? [dateParam]
+    : Array.from({ length: 7 }, (_, i) => nDaysAfter(i + 1, today));
+
   // Fetch last 30 days of Compondus words to avoid repetition
-  const thirtyDaysAgo = nDaysBefore(30, getTodaysCT());
+  const thirtyDaysAgo = nDaysBefore(30, today);
   const { data: recentCompondus } = await supabaseAdmin
     .from("daily_puzzles")
     .select("puzzle_data")
@@ -55,27 +60,26 @@ export async function GET(request: Request) {
   const recentWords = (recentCompondus ?? [])
     .flatMap(r => ((r.puzzle_data as CompondusPuzzle).chain ?? []).map((w: string) => w.toLowerCase()));
 
-  const all = [
-    { game: "numeris", puzzle_data: generateNumeris() },
-    { game: "lumis", puzzle_data: generateLumis() },
-    { game: "verba", puzzle_data: generateVerba() },
-    { game: "aquarum", puzzle_data: generateAquarum() },
-    { game: "compondus", puzzle_data: generateCompondus(recentWords) },
-    { game: "loopa", puzzle_data: generateLoopa() },
-  ];
-  const puzzles = gameFilter ? all.filter((p) => p.game === gameFilter) : all;
+  const rows = dates.flatMap((puzzleDate) => {
+    const all = [
+      { game: "numeris", puzzle_data: generateNumeris() },
+      { game: "lumis", puzzle_data: generateLumis() },
+      { game: "verba", puzzle_data: generateVerba() },
+      { game: "aquarum", puzzle_data: generateAquarum() },
+      { game: "compondus", puzzle_data: generateCompondus(recentWords) },
+      { game: "loopa", puzzle_data: generateLoopa() },
+    ];
+    const puzzles = gameFilter ? all.filter((p) => p.game === gameFilter) : all;
+    return puzzles.map((p) => ({ game: p.game, puzzle_date: puzzleDate, puzzle_data: p.puzzle_data }));
+  });
 
   const { error } = await supabaseAdmin.from("daily_puzzles").upsert(
-    puzzles.map((p) => ({
-      game: p.game,
-      puzzle_date: puzzleDate,
-      puzzle_data: p.puzzle_data,
-    })),
-    { onConflict: "game,puzzle_date" },
+    rows,
+    { onConflict: "game,puzzle_date", ignoreDuplicates: true },
   );
 
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ date: puzzleDate, puzzles });
+  return NextResponse.json({ dates });
 }
