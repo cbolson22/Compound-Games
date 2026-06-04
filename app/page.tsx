@@ -189,7 +189,6 @@ export default function Home() {
       streak: loopaStreak,
       key: "loopa",
       isNew: true,
-      hidden: true,
     },
   ];
 
@@ -212,7 +211,7 @@ export default function Home() {
       </Link>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
-        {games.filter((g) => !g.hidden).map((g) => (
+        {games.map((g) => (
           <div key={g.key} className="relative h-full">
             {g.isNew && (
               <span className="new-badge absolute -top-2.5 -left-2 z-10 bg-violet-600 text-white text-[0.55rem] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full pointer-events-none select-none">
@@ -227,7 +226,15 @@ export default function Home() {
                 <span className="font-serif text-2xl">{g.name}</span>
                 <button
                   className="text-xs font-medium rounded-full px-2.5 py-0.5 transition-all w-fit"
-                  style={g.key === "loopa" ? { border: "2.5px solid #7c3aed", color: "#7c3aed", fontWeight: 700 } : { border: "1px solid #ddd", color: "#555" }}
+                  style={
+                    g.key === "loopa"
+                      ? {
+                          border: "2.5px solid #7c3aed",
+                          color: "#7c3aed",
+                          fontWeight: 700,
+                        }
+                      : { border: "1px solid #ddd", color: "#555" }
+                  }
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
