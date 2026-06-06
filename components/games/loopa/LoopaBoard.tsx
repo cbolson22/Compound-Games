@@ -273,26 +273,24 @@ export default function LoopaBoard({
 
             return (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {clue > 0 && (
-                  <div style={{
-                    width: cellSize * 0.55,
-                    height: cellSize * 0.55,
-                    borderRadius: cellSize * 0.14,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: `${Math.max(11, cellSize * 0.32)}px`,
-                    fontWeight: 700,
-                    background: over ? '#fee2e2' : done ? CLUE_BG[clue] : 'transparent',
-                    color: over ? '#ef4444' : CLUE_COLORS[clue],
-                    opacity: over ? 1 : done ? 1 : 0.3,
-                    boxShadow: done ? `0 0 0 2px ${CLUE_COLORS[clue]}55` : 'none',
-                    transform: done ? 'scale(1.1)' : 'scale(1)',
-                    transition: 'all 0.2s',
-                  }}>
-                    {clue}
-                  </div>
-                )}
+                <div style={{
+                  width: cellSize * 0.55,
+                  height: cellSize * 0.55,
+                  borderRadius: cellSize * 0.14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: `${Math.max(11, cellSize * 0.32)}px`,
+                  fontWeight: 700,
+                  background: over ? '#fee2e2' : done ? CLUE_BG[clue] : 'transparent',
+                  color: over ? '#ef4444' : CLUE_COLORS[clue] ?? '#94a3b8',
+                  opacity: over ? 1 : done ? 1 : 0.3,
+                  boxShadow: done ? `0 0 0 2px ${CLUE_COLORS[clue]}55` : 'none',
+                  transform: done ? 'scale(1.1)' : 'scale(1)',
+                  transition: 'all 0.2s',
+                }}>
+                  {clue}
+                </div>
               </div>
             )
           })}
