@@ -188,7 +188,7 @@ export default function Home() {
       name: "Loopa",
       streak: loopaStreak,
       key: "loopa",
-      isNew: true,
+      isNew: false,
     },
   ];
 
@@ -226,15 +226,7 @@ export default function Home() {
                 <span className="font-serif text-2xl">{g.name}</span>
                 <button
                   className="text-xs font-medium rounded-full px-2.5 py-0.5 transition-all w-fit"
-                  style={
-                    g.key === "loopa"
-                      ? {
-                          border: "2.5px solid #7c3aed",
-                          color: "#7c3aed",
-                          fontWeight: 700,
-                        }
-                      : { border: "1px solid #ddd", color: "#555" }
-                  }
+                  style={{ border: "1px solid #ddd", color: "#555" }}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
