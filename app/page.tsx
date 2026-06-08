@@ -230,6 +230,7 @@ export default function Home() {
   const [medals, setMedals] = useState<AllMedalCounts | null>(null);
   const [activeTutorial, setActiveTutorial] = useState<string | null>(null);
   const [birthdayDismissed, setBirthdayDismissed] = useState(false);
+  const [birthdayForceOpen, setBirthdayForceOpen] = useState(false);
   const [birthdayShownToday] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -240,11 +241,14 @@ export default function Home() {
     !loading &&
     !!profile?.birthday &&
     profile.birthday === getTodaysCT().slice(5);
-  const showBirthday = isBirthday && !birthdayShownToday && !birthdayDismissed;
+  const showBirthday =
+    (isBirthday && !birthdayShownToday && !birthdayDismissed) ||
+    birthdayForceOpen;
 
   function handleBirthdayClose() {
     localStorage.setItem(`bday_shown_${getTodaysCT()}`, "1");
     setBirthdayDismissed(true);
+    setBirthdayForceOpen(false);
   }
 
   useEffect(() => {
@@ -398,6 +402,16 @@ export default function Home() {
           <span className="font-serif text-2xl">Feedback</span>
           <span className="text-sm text-[#aaa]">Ideas, bugs, requests</span>
         </Link>
+
+        {isBirthday && (
+          <button
+            onClick={() => setBirthdayForceOpen(true)}
+            className="flex flex-col gap-1 p-6 border-2 border-[#f9a8d4] rounded-2xl hover:border-[#f472b6] transition-colors h-full text-left"
+          >
+            <span className="font-serif text-2xl">🎂 Happy Birthday!</span>
+            <span className="text-sm text-[#aaa]">Open your surprise again</span>
+          </button>
+        )}
       </div>
 
       <div className="mt-6 text-sm text-[#aaa]">
