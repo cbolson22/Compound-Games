@@ -123,6 +123,101 @@ function TutorialModal({
   );
 }
 
+const CONFETTI_COLORS = [
+  "#ff6b6b",
+  "#ffd93d",
+  "#6bcb77",
+  "#4d96ff",
+  "#ff922b",
+  "#cc5de8",
+  "#f06595",
+  "#74c0fc",
+];
+
+function BirthdayModal({
+  username,
+  onClose,
+}: {
+  username: string;
+  onClose: () => void;
+}) {
+  const [phase, setPhase] = useState<"gift" | "open">("gift");
+
+  const [confettiPieces] = useState(() =>
+    Array.from({ length: 70 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      width: 6 + Math.random() * 8,
+      height: 8 + Math.random() * 7,
+      delay: Math.random() * 2,
+      duration: 2.5 + Math.random() * 2,
+      isCircle: Math.random() > 0.5,
+    })),
+  );
+
+  return (
+    <>
+      {phase === "open" && (
+        <div className="fixed inset-0 pointer-events-none z-60 overflow-hidden">
+          {confettiPieces.map((p) => (
+            <div
+              key={p.id}
+              style={{
+                position: "absolute",
+                left: `${p.left}%`,
+                top: "-40px",
+                width: p.width,
+                height: p.height,
+                backgroundColor: p.color,
+                borderRadius: p.isCircle ? "50%" : "2px",
+                animation: `confetti-fall ${p.duration}s ${p.delay}s ease-in forwards`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
+        <div className="bg-white rounded-2xl p-8 w-full max-w-sm flex flex-col items-center gap-5 relative">
+          {phase === "gift" ? (
+            <>
+              <div className="birthday-gift text-7xl select-none leading-none">
+                🎁
+              </div>
+              <p className="text-sm text-[#555] text-center">
+                You have a surprise waiting…
+              </p>
+              <button
+                className="w-full py-3 rounded-full bg-[#1a1a1a] text-white text-sm font-medium hover:opacity-85 transition-opacity"
+                onClick={() => setPhase("open")}
+              >
+                Open
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="absolute top-4 right-4 text-[#bbb] hover:text-[#1a1a1a] text-base leading-none transition-colors"
+                onClick={onClose}
+              >
+                ✕
+              </button>
+              <div className="text-5xl leading-none">🎂</div>
+              <h2 className="font-serif text-3xl text-center text-[#1a1a1a]">
+                Happy Birthday!
+              </h2>
+              <p className="text-sm text-[#555] text-center leading-relaxed">
+                Hope your day is as great as your scores, {username}! 🎉
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function Home() {
   const { user, profile, loading, signOut } = useAuth();
   const [numerisStreak, setNumerisStreak] = useState(0);
@@ -134,6 +229,23 @@ export default function Home() {
   const [playedGames, setPlayedGames] = useState<Set<string> | null>(null);
   const [medals, setMedals] = useState<AllMedalCounts | null>(null);
   const [activeTutorial, setActiveTutorial] = useState<string | null>(null);
+  const [birthdayDismissed, setBirthdayDismissed] = useState(false);
+  const [birthdayShownToday] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      !!localStorage.getItem(`bday_shown_${getTodaysCT()}`),
+  );
+
+  const isBirthday =
+    !loading &&
+    !!profile?.birthday &&
+    profile.birthday === getTodaysCT().slice(5);
+  const showBirthday = isBirthday && !birthdayShownToday && !birthdayDismissed;
+
+  function handleBirthdayClose() {
+    localStorage.setItem(`bday_shown_${getTodaysCT()}`, "1");
+    setBirthdayDismissed(true);
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -196,12 +308,14 @@ export default function Home() {
     <main className="min-h-screen flex flex-col items-center p-8 pt-12">
       <h1 className="font-serif text-5xl mb-2 text-center">Compound Games</h1>
       <p className="text-xl text-[#555] mb-1 text-center">
+        {isBirthday && "🎂 "}
         {new Date().toLocaleDateString("en-US", {
           timeZone: "America/Chicago",
           weekday: "long",
           month: "long",
           day: "numeric",
         })}
+        {isBirthday && " 🎂"}
       </p>
       <Link
         href="/analytics"
@@ -312,6 +426,13 @@ export default function Home() {
         <TutorialModal
           game={activeTutorial}
           onClose={() => setActiveTutorial(null)}
+        />
+      )}
+
+      {showBirthday && (
+        <BirthdayModal
+          username={profile?.username ?? "friend"}
+          onClose={handleBirthdayClose}
         />
       )}
     </main>

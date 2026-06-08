@@ -7,6 +7,7 @@ import type { User } from '@supabase/supabase-js'
 export interface Profile {
   id: string
   username: string
+  birthday: string | null
 }
 
 interface AuthContextValue {
@@ -37,7 +38,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   async function fetchProfile(userId: string) {
     const { data } = await supabase
       .from('profiles')
-      .select('id, username')
+      .select('id, username, birthday')
       .eq('id', userId)
       .single()
     setProfile(data)
