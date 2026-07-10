@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { getTodaysCT, nDaysBefore, nDaysAfter } from "@/lib/dates";
+import {
+  getTodaysCT,
+  getYesterdayCT,
+  nDaysBefore,
+  nDaysAfter,
+} from "@/lib/dates";
 import { generateNumeris } from "@/lib/puzzles/numeris";
 import { generateLumis } from "@/lib/puzzles/lumis";
 import { generateVerba } from "@/lib/puzzles/verba";
 import { generateAquarum } from "@/lib/puzzles/aquarum";
-import { generateCompondus, type CompondusPuzzle } from "@/lib/puzzles/compondus";
+import {
+  generateCompondus,
+  type CompondusPuzzle,
+} from "@/lib/puzzles/compondus";
 import { generateLoopa } from "@/lib/puzzles/loopa";
 import { awardMedalsForDate } from "@/lib/medals";
+import { awardSeasonTrophies, createNextSeason } from "@/lib/seasons";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -39,7 +48,14 @@ export async function GET(request: Request) {
   }
 
   const gameFilter = url.searchParams.get("game");
-  const VALID_GAMES = ["numeris", "lumis", "verba", "aquarum", "compondus", "loopa"];
+  const VALID_GAMES = [
+    "numeris",
+    "lumis",
+    "verba",
+    "aquarum",
+    "compondus",
+    "loopa",
+  ];
   if (gameFilter && !VALID_GAMES.includes(gameFilter)) {
     return NextResponse.json({ error: "Invalid game" }, { status: 400 });
   }
@@ -57,8 +73,11 @@ export async function GET(request: Request) {
     .select("puzzle_data")
     .eq("game", "compondus")
     .gte("puzzle_date", thirtyDaysAgo);
-  const recentWords = (recentCompondus ?? [])
-    .flatMap(r => ((r.puzzle_data as CompondusPuzzle).chain ?? []).map((w: string) => w.toLowerCase()));
+  const recentWords = (recentCompondus ?? []).flatMap((r) =>
+    ((r.puzzle_data as CompondusPuzzle).chain ?? []).map((w: string) =>
+      w.toLowerCase(),
+    ),
+  );
 
   const rows = dates.flatMap((puzzleDate) => {
     const all = [
@@ -70,16 +89,51 @@ export async function GET(request: Request) {
       { game: "loopa", puzzle_data: generateLoopa() },
     ];
     const puzzles = gameFilter ? all.filter((p) => p.game === gameFilter) : all;
-    return puzzles.map((p) => ({ game: p.game, puzzle_date: puzzleDate, puzzle_data: p.puzzle_data }));
+    return puzzles.map((p) => ({
+      game: p.game,
+      puzzle_date: puzzleDate,
+      puzzle_data: p.puzzle_data,
+    }));
   });
 
-  const { error } = await supabaseAdmin.from("daily_puzzles").upsert(
-    rows,
-    { onConflict: "game,puzzle_date", ignoreDuplicates: true },
-  );
+  const { error } = await supabaseAdmin
+    .from("daily_puzzles")
+    .upsert(rows, { onConflict: "game,puzzle_date", ignoreDuplicates: true });
 
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Nightly automatic run: award yesterday's medals and handle season transitions.
+  if (!dateParam) {
+    const today = getTodaysCT();
+    const yesterday = getYesterdayCT();
+
+    await awardMedalsForDate(yesterday, supabaseAdmin);
+
+    // If today is the last day of a season, pre-create the next season tonight
+    // so it exists in the DB by tomorrow (the first day of the new season).
+    const { data: endingToday } = await supabaseAdmin
+      .from("seasons")
+      .select("*")
+      .eq("end_date", today)
+      .limit(1);
+
+    if (endingToday?.length) {
+      await createNextSeason(endingToday[0], supabaseAdmin);
+    }
+
+    // If yesterday was the last day of a season, all its medals are now in the DB
+    // — award trophies.
+    const { data: endedYesterday } = await supabaseAdmin
+      .from("seasons")
+      .select("*")
+      .eq("end_date", yesterday)
+      .limit(1);
+
+    if (endedYesterday?.length) {
+      await awardSeasonTrophies(endedYesterday[0].id, supabaseAdmin);
+    }
+  }
 
   return NextResponse.json({ dates });
 }

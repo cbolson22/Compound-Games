@@ -385,6 +385,19 @@ export default function Home() {
           <span className="text-sm text-[#aaa]">Today&apos;s Rankings</span>
         </Link>
 
+        <div className="relative h-full">
+          <span className="new-badge absolute -top-2.5 -left-2 z-10 bg-violet-600 text-white text-[0.55rem] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full pointer-events-none select-none">
+            new
+          </span>
+          <Link
+            href="/seasons"
+            className="flex flex-col gap-1 p-6 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors h-full"
+          >
+            <span className="font-serif text-2xl">Seasons</span>
+            <span className="text-sm text-[#aaa]">Medal Leaderboards</span>
+          </Link>
+        </div>
+
         <Link
           href="/profile"
           className="flex flex-col gap-1 p-6 border border-[#f0f0f0] rounded-2xl hover:border-[#ddd] transition-colors h-full"
