@@ -11,6 +11,7 @@ import { useVerba, MAX_COL_HEIGHT, GAME_DURATION, WORD_COLORS, type Grid, type V
 import type { VerbaPuzzle } from '@/lib/puzzles/verba'
 import { LETTER_VALUES } from '@/lib/scoring'
 import { fmtTime } from '@/lib/format'
+import { getTodaysCT } from '@/lib/dates'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { getUserStreak } from '@/lib/streaks'
@@ -151,6 +152,17 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
         time_seconds: GAME_DURATION,
         solution: grid,
       })
+      supabase.from('public_scores').upsert({
+        user_id: user.id,
+        game: 'verba',
+        puzzle_date: getTodaysCT(),
+        is_archive: false,
+        time_seconds: GAME_DURATION,
+        score: totalScore,
+        share: `Compound Games – Verba\n📊 ${totalScore} pts`,
+        solve_data: { solution: grid },
+        completed_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,game,puzzle_date,is_archive' })
       const s = await getUserStreak(user.id, 'verba')
       setStreak(s)
     })()

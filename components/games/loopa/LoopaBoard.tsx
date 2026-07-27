@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { getUserStreak } from '@/lib/streaks'
 import { fmtTime } from '@/lib/format'
+import { getTodaysCT } from '@/lib/dates'
 import { useLoopa, hKey, vKey, cellEdgeCount, type EdgeKey } from './useLoopa'
 import type { LoopaPuzzle } from '@/lib/puzzles/loopa'
 import styles from './loopa.module.css'
@@ -117,6 +118,17 @@ export default function LoopaBoard({
         time_seconds: elapsed,
         solution: [...edges],
       })
+      supabase.from('public_scores').upsert({
+        user_id: user.id,
+        game: 'loopa',
+        puzzle_date: getTodaysCT(),
+        is_archive: false,
+        time_seconds: elapsed,
+        score: null,
+        share: `Compound Games – Loopa\n⏱ ${fmtTime(elapsed)}`,
+        solve_data: { solution: [...edges] },
+        completed_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,game,puzzle_date,is_archive' })
       const s = await getUserStreak(user.id, 'loopa')
       setStreak(s)
     })()

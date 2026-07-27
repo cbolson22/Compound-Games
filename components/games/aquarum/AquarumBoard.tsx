@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { getUserStreak } from '@/lib/streaks'
 import { fmtTime } from '@/lib/format'
+import { getTodaysCT } from '@/lib/dates'
 import { useAquarum, getOpenSides, type AquarumPuzzle, type PipeCell } from './useAquarum'
 import styles from './aquarum.module.css'
 
@@ -121,6 +122,17 @@ export default function AquarumBoard({
         time_seconds: elapsed,
         solution: rotations,
       })
+      supabase.from('public_scores').upsert({
+        user_id: user.id,
+        game: 'aquarum',
+        puzzle_date: getTodaysCT(),
+        is_archive: false,
+        time_seconds: elapsed,
+        score: null,
+        share: `Compound Games – Aquarum\n⏱ ${fmtTime(elapsed)}`,
+        solve_data: { solution: rotations },
+        completed_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,game,puzzle_date,is_archive' })
       const s = await getUserStreak(user.id, 'aquarum')
       setStreak(s)
     })()

@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getUserStreak } from "@/lib/streaks";
 import { fmtTime } from "@/lib/format";
+import { getTodaysCT } from "@/lib/dates";
 import {
   DndContext,
   DragOverlay,
@@ -222,6 +223,17 @@ export default function NumerisBoard({
         time_seconds: elapsed,
         solution: slotContents,
       });
+      supabase.from("public_scores").upsert({
+        user_id: user.id,
+        game: "numeris",
+        puzzle_date: getTodaysCT(),
+        is_archive: false,
+        time_seconds: elapsed,
+        score: null,
+        share: `Compound Games – Numeris\n⏱ ${fmtTime(elapsed)}`,
+        solve_data: { solution: slotContents },
+        completed_at: new Date().toISOString(),
+      }, { onConflict: "user_id,game,puzzle_date,is_archive" });
       const s = await getUserStreak(user.id, "numeris");
       setStreak(s);
     })();

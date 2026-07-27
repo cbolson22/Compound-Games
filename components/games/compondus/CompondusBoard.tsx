@@ -5,6 +5,7 @@ import { useCompondus, type CompondusSavedState } from './useCompondus'
 import type { CompondusPuzzle } from '@/lib/puzzles/compondus'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth/AuthProvider'
+import { getTodaysCT } from '@/lib/dates'
 import styles from './compondus.module.css'
 
 function AnchorRow({ word, position }: { word: string; position: 'start' | 'end' }) {
@@ -150,6 +151,17 @@ export default function CompondusBoard({ puzzle, puzzleId }: { puzzle: Compondus
         score: wrongCount,
         time_seconds: timeTaken,
       })
+      supabase.from('public_scores').upsert({
+        user_id: user.id,
+        game: 'compondus',
+        puzzle_date: getTodaysCT(),
+        is_archive: false,
+        time_seconds: timeTaken,
+        score: wrongCount,
+        share: `Compound Games – Compondus\n🎯 ${wrongCount} wrong guess${wrongCount !== 1 ? 'es' : ''}`,
+        solve_data: null,
+        completed_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,game,puzzle_date,is_archive' })
     })()
   }, [solved, user, puzzleId, wrongCount, loadingScore, existingScore])
 
