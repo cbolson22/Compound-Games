@@ -231,7 +231,7 @@ export default function NumerisBoard({
         time_seconds: elapsed,
         score: null,
         share: `Compound Games – Numeris\n⏱ ${fmtTime(elapsed)}`,
-        solve_data: { solution: slotContents },
+        solve_data: { slots: slotContents },
         completed_at: new Date().toISOString(),
       }, { onConflict: "user_id,game,puzzle_date", ignoreDuplicates: true });
       const s = await getUserStreak(user.id, "numeris");
