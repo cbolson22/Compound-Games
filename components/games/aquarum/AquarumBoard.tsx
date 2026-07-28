@@ -132,7 +132,7 @@ export default function AquarumBoard({
         share: `Compound Games – Aquarum\n⏱ ${fmtTime(elapsed)}`,
         solve_data: { solution: rotations },
         completed_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,game,puzzle_date' })
+      }, { onConflict: 'user_id,game,puzzle_date', ignoreDuplicates: true })
       const s = await getUserStreak(user.id, 'aquarum')
       setStreak(s)
     })()

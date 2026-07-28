@@ -161,7 +161,7 @@ export default function CompondusBoard({ puzzle, puzzleId }: { puzzle: Compondus
         share: `Compound Games – Compondus\n🎯 ${wrongCount} wrong guess${wrongCount !== 1 ? 'es' : ''}`,
         solve_data: null,
         completed_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,game,puzzle_date' })
+      }, { onConflict: 'user_id,game,puzzle_date', ignoreDuplicates: true })
     })()
   }, [solved, user, puzzleId, wrongCount, loadingScore, existingScore, startTime])
 

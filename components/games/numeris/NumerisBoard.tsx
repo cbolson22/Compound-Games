@@ -233,7 +233,7 @@ export default function NumerisBoard({
         share: `Compound Games – Numeris\n⏱ ${fmtTime(elapsed)}`,
         solve_data: { solution: slotContents },
         completed_at: new Date().toISOString(),
-      }, { onConflict: "user_id,game,puzzle_date" });
+      }, { onConflict: "user_id,game,puzzle_date", ignoreDuplicates: true });
       const s = await getUserStreak(user.id, "numeris");
       setStreak(s);
     })();

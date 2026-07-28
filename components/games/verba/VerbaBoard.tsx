@@ -162,7 +162,7 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
         share: `Compound Games – Verba\n📊 ${totalScore} pts`,
         solve_data: { solution: grid },
         completed_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,game,puzzle_date' })
+      }, { onConflict: 'user_id,game,puzzle_date', ignoreDuplicates: true })
       const s = await getUserStreak(user.id, 'verba')
       setStreak(s)
     })()
