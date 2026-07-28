@@ -174,7 +174,7 @@ export default function LumisBoard({ puzzle, puzzleId }: { puzzle: LumisPuzzle; 
         time_seconds: elapsed,
         solution: placed,
       })
-      supabase.from('public_scores').upsert({
+      await supabase.from('public_scores').upsert({
         user_id: user.id,
         game: 'lumis',
         puzzle_date: getTodaysCT(),
@@ -184,7 +184,7 @@ export default function LumisBoard({ puzzle, puzzleId }: { puzzle: LumisPuzzle; 
         share: `Compound Games – Lumis\n⏱ ${fmtTime(elapsed)}`,
         solve_data: { solution: placed },
         completed_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,game,puzzle_date,is_archive' })
+      }, { onConflict: 'user_id,game,puzzle_date' })
       const s = await getUserStreak(user.id, 'lumis')
       setStreak(s)
     })()

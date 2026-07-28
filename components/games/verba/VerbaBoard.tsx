@@ -152,7 +152,7 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
         time_seconds: GAME_DURATION,
         solution: grid,
       })
-      supabase.from('public_scores').upsert({
+      await supabase.from('public_scores').upsert({
         user_id: user.id,
         game: 'verba',
         puzzle_date: getTodaysCT(),
@@ -162,7 +162,7 @@ export default function VerbaBoard({ puzzle, puzzleId }: { puzzle: VerbaPuzzle; 
         share: `Compound Games – Verba\n📊 ${totalScore} pts`,
         solve_data: { solution: grid },
         completed_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,game,puzzle_date,is_archive' })
+      }, { onConflict: 'user_id,game,puzzle_date' })
       const s = await getUserStreak(user.id, 'verba')
       setStreak(s)
     })()

@@ -122,7 +122,7 @@ export default function AquarumBoard({
         time_seconds: elapsed,
         solution: rotations,
       })
-      supabase.from('public_scores').upsert({
+      await supabase.from('public_scores').upsert({
         user_id: user.id,
         game: 'aquarum',
         puzzle_date: getTodaysCT(),
@@ -132,7 +132,7 @@ export default function AquarumBoard({
         share: `Compound Games – Aquarum\n⏱ ${fmtTime(elapsed)}`,
         solve_data: { solution: rotations },
         completed_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,game,puzzle_date,is_archive' })
+      }, { onConflict: 'user_id,game,puzzle_date' })
       const s = await getUserStreak(user.id, 'aquarum')
       setStreak(s)
     })()

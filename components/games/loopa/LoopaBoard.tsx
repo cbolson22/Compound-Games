@@ -118,7 +118,7 @@ export default function LoopaBoard({
         time_seconds: elapsed,
         solution: [...edges],
       })
-      supabase.from('public_scores').upsert({
+      await supabase.from('public_scores').upsert({
         user_id: user.id,
         game: 'loopa',
         puzzle_date: getTodaysCT(),
@@ -128,7 +128,7 @@ export default function LoopaBoard({
         share: `Compound Games – Loopa\n⏱ ${fmtTime(elapsed)}`,
         solve_data: { solution: [...edges] },
         completed_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,game,puzzle_date,is_archive' })
+      }, { onConflict: 'user_id,game,puzzle_date' })
       const s = await getUserStreak(user.id, 'loopa')
       setStreak(s)
     })()

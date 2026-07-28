@@ -65,7 +65,7 @@ function HiddenRow({
 export default function CompondusBoard({ puzzle, puzzleId }: { puzzle: CompondusPuzzle; puzzleId: string | null }) {
   const { user } = useAuth()
   const scoreSubmitted = useRef(false)
-  const startTimeRef = useRef(Date.now())
+  const [startTime] = useState(() => Date.now())
 
   const [existingScore, setExistingScore] = useState<number | null>(null)
   const [loadingScore, setLoadingScore] = useState(!!puzzleId)
@@ -89,7 +89,7 @@ export default function CompondusBoard({ puzzle, puzzleId }: { puzzle: Compondus
 
   // Check for existing score
   useEffect(() => {
-    if (!user || !puzzleId) { setLoadingScore(false); return }
+    if (!user || !puzzleId) { setTimeout(() => setLoadingScore(false), 0); return }
     supabase
       .from('scores')
       .select('score')
@@ -104,7 +104,7 @@ export default function CompondusBoard({ puzzle, puzzleId }: { puzzle: Compondus
 
   // Clear typed letters and refocus when slot or wrong count changes
   useEffect(() => {
-    setTypedLetters([])
+    setTimeout(() => setTypedLetters([]), 0)
     if (hiddenInputRef.current) hiddenInputRef.current.value = ''
     if (!solved && existingScore === null && !loadingScore) {
       setTimeout(() => hiddenInputRef.current?.focus(), 50)
@@ -143,7 +143,7 @@ export default function CompondusBoard({ puzzle, puzzleId }: { puzzle: Compondus
   useEffect(() => {
     if (!solved || !user || !puzzleId || scoreSubmitted.current || loadingScore || existingScore !== null) return
     scoreSubmitted.current = true
-    const timeTaken = Math.floor((Date.now() - startTimeRef.current) / 1000)
+    const timeTaken = Math.floor((Date.now() - startTime) / 1000)
     ;(async () => {
       await supabase.from('scores').insert({
         user_id: user.id,
@@ -151,7 +151,7 @@ export default function CompondusBoard({ puzzle, puzzleId }: { puzzle: Compondus
         score: wrongCount,
         time_seconds: timeTaken,
       })
-      supabase.from('public_scores').upsert({
+      await supabase.from('public_scores').upsert({
         user_id: user.id,
         game: 'compondus',
         puzzle_date: getTodaysCT(),
@@ -161,9 +161,9 @@ export default function CompondusBoard({ puzzle, puzzleId }: { puzzle: Compondus
         share: `Compound Games – Compondus\n🎯 ${wrongCount} wrong guess${wrongCount !== 1 ? 'es' : ''}`,
         solve_data: null,
         completed_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,game,puzzle_date,is_archive' })
+      }, { onConflict: 'user_id,game,puzzle_date' })
     })()
-  }, [solved, user, puzzleId, wrongCount, loadingScore, existingScore])
+  }, [solved, user, puzzleId, wrongCount, loadingScore, existingScore, startTime])
 
   // Persist in-progress state
   useEffect(() => {
