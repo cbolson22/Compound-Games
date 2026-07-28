@@ -126,7 +126,7 @@ export default function LoopaBoard({
         time_seconds: elapsed,
         score: null,
         share: `Compound Games – Loopa\n⏱ ${fmtTime(elapsed)}`,
-        solve_data: { solution: [...edges] },
+        solve_data: { edges: [...edges] },
         completed_at: new Date().toISOString(),
       }, { onConflict: 'user_id,game,puzzle_date', ignoreDuplicates: true })
       const s = await getUserStreak(user.id, 'loopa')
