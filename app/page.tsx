@@ -229,6 +229,12 @@ export default function Home() {
   const [playedGames, setPlayedGames] = useState<Set<string> | null>(null);
   const [medals, setMedals] = useState<AllMedalCounts | null>(null);
   const [activeTutorial, setActiveTutorial] = useState<string | null>(null);
+  const [promoDismissed, setPromoDismissed] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      !!localStorage.getItem("promo_new_site_dismissed"),
+  );
+  const [showPromoDismissConfirm, setShowPromoDismissConfirm] = useState(false);
   const [birthdayDismissed, setBirthdayDismissed] = useState(false);
   const [birthdayForceOpen, setBirthdayForceOpen] = useState(false);
   const [birthdayShownToday] = useState(
@@ -329,6 +335,80 @@ export default function Home() {
       </Link>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+        {!promoDismissed && (
+          <a
+            href="https://compound-games.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative sm:col-span-2 flex flex-col gap-2 px-4 py-3 border border-violet-200 rounded-2xl hover:border-violet-300 transition-colors"
+          >
+            <span className="new-badge absolute -top-2.5 -left-2 z-10 bg-violet-600 text-white text-[0.55rem] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full pointer-events-none select-none">
+              now public
+            </span>
+            <button
+              className="absolute top-2 right-2 text-[#ccc] hover:text-[#888] text-sm leading-none transition-colors p-1"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowPromoDismissConfirm(true);
+              }}
+            >
+              ✕
+            </button>
+            <div className="flex items-start gap-3">
+              <img
+                src="/new-site-preview.png"
+                alt="Compound Games public site"
+                className="w-20 h-14 rounded-lg border border-violet-100 object-cover shrink-0"
+              />
+              <div className="flex flex-col gap-0.5 pr-4">
+                <span className="font-serif text-lg text-violet-900">
+                  Now also on compound-games.com
+                </span>
+                <span className="text-xs text-[#777] leading-relaxed">
+                  Sign in with your same account to play the archive, share scores with richer stats, and invite anyone. Your scores here sync there too — so keep playing here for the leaderboard, or jump over anytime. I appreciate you core group for supporting the project the whole way through! Send this new link to anyone and everyone!
+                </span>
+              </div>
+            </div>
+          </a>
+        )}
+
+        {showPromoDismissConfirm && (
+          <div
+            className="fixed inset-0 bg-black/45 flex items-center justify-center z-50 p-6"
+            onClick={() => setShowPromoDismissConfirm(false)}
+          >
+            <div
+              className="bg-white rounded-2xl p-7 w-full max-w-sm flex flex-col gap-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="font-serif text-2xl text-[#1a1a1a]">Hide this?</h2>
+              <p className="text-sm text-[#555] leading-relaxed">
+                This will hide the Compound Games public site banner. You can always visit{" "}
+                <span className="font-semibold">compound-games.com</span> directly.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  className="flex-1 py-3 rounded-full bg-[#1a1a1a] text-white text-sm font-medium hover:opacity-85 transition-opacity"
+                  onClick={() => {
+                    localStorage.setItem("promo_new_site_dismissed", "1");
+                    setPromoDismissed(true);
+                    setShowPromoDismissConfirm(false);
+                  }}
+                >
+                  Yes, hide it
+                </button>
+                <button
+                  className="flex-1 py-3 rounded-full border border-[#ddd] text-[#555] text-sm font-medium hover:border-[#bbb] transition-colors"
+                  onClick={() => setShowPromoDismissConfirm(false)}
+                >
+                  Never mind
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {games.map((g) => (
           <div key={g.key} className="relative h-full">
             {g.isNew && (
